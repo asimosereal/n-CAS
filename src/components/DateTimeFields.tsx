@@ -255,21 +255,59 @@ export function TimeField({
   const hours = Number(hoursText);
   const minutes = Number(minutesText);
 
+  // Keep a short editable draft so the user can type naturally, e.g. "11" -> "15".
+  const [hourDraft, setHourDraft] = React.useState(hoursText);
+  const [minuteDraft, setMinuteDraft] = React.useState(minutesText);
+
+  React.useEffect(() => {
+    setHourDraft(hoursText);
+    setMinuteDraft(minutesText);
+  }, [hoursText, minutesText]);
+
   const commit = (nextHours: number, nextMinutes: number) => {
-    const h = Math.min(23, Math.max(0, nextHours));
-    const m = Math.min(59, Math.max(0, nextMinutes));
-    onChange(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+    let h = nextHours;
+    let m = nextMinutes;
+
+    if (m < 0) {
+      h -= 1;
+      m = 59;
+    } else if (m > 59) {
+      h += 1;
+      m = 0;
+    }
+
+    if (h < 0) h = 23;
+    if (h > 23) h = 0;
+
+    const next = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    onChange(next);
+    setHourDraft(String(h).padStart(2, '0'));
+    setMinuteDraft(String(m).padStart(2, '0'));
+  };
+
+  const commitHourDraft = () => {
+    const numeric = Number(hourDraft);
+    if (hourDraft !== '' && Number.isInteger(numeric) && numeric >= 0 && numeric <= 23) {
+      commit(numeric, minutes);
+    } else {
+      setHourDraft(hoursText);
+    }
+  };
+
+  const commitMinuteDraft = () => {
+    const numeric = Number(minuteDraft);
+    if (minuteDraft !== '' && Number.isInteger(numeric) && numeric >= 0 && numeric <= 59) {
+      commit(hours, numeric);
+    } else {
+      setMinuteDraft(minutesText);
+    }
   };
 
   const stepHours = (delta: number) => commit(hours + delta, minutes);
-  const stepMinutes = (delta: number) => {
-    const total = hours * 60 + minutes + delta;
-    const wrapped = (total + 1440) % 1440;
-    commit(Math.floor(wrapped / 60), wrapped % 60);
-  };
+  const stepMinutes = (delta: number) => commit(hours, minutes + delta);
 
-  const onSegmentKeyDown = (
-    event: React.KeyboardEvent<HTMLButtonElement>,
+  const handleSegmentKeyDown = (
+    event: React.KeyboardEvent<HTMLInputElement>,
     segment: 'hours' | 'minutes',
   ) => {
     if (event.key === 'ArrowUp') {
@@ -278,12 +316,36 @@ export function TimeField({
     } else if (event.key === 'ArrowDown') {
       event.preventDefault();
       segment === 'hours' ? stepHours(-1) : stepMinutes(-1);
-    } else if (event.key === 'Home') {
+    } else if (event.key === 'Enter') {
       event.preventDefault();
-      segment === 'hours' ? commit(0, minutes) : commit(hours, 0);
-    } else if (event.key === 'End') {
-      event.preventDefault();
-      segment === 'hours' ? commit(23, minutes) : commit(hours, 59);
+      segment === 'hours' ? commitHourDraft() : commitMinuteDraft();
+      event.currentTarget.blur();
+    } else if (event.key === 'Tab') {
+      segment === 'hours' ? commitHourDraft() : commitMinuteDraft();
+    }
+  };
+
+  const handleHourChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const digits = event.target.value.replace(/\\D/g, '').slice(0, 2);
+    setHourDraft(digits);
+
+    if (digits.length === 2) {
+      const numeric = Number(digits);
+      if (numeric <= 23) {
+        commit(numeric, minutes);
+      }
+    }
+  };
+
+  const handleMinuteChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const digits = event.target.value.replace(/\\D/g, '').slice(0, 2);
+    setMinuteDraft(digits);
+
+    if (digits.length === 2) {
+      const numeric = Number(digits);
+      if (numeric <= 59) {
+        commit(hours, numeric);
+      }
     }
   };
 
@@ -299,14 +361,18 @@ export function TimeField({
             title="Increase hour"
             onClick={() => stepHours(1)}
           />
-          <button
-            type="button"
+          <input
+            type="text"
+            inputMode="numeric"
+            maxLength={2}
             className="ncas-time-picker__value"
-            aria-label={`${label} hour, ${String(hours).padStart(2, '0')}`}
-            onKeyDown={(event) => onSegmentKeyDown(event, 'hours')}
-          >
-            {String(hours).padStart(2, '0')}
-          </button>
+            aria-label={`${label} hour`}
+            value={hourDraft}
+            onChange={handleHourChange}
+            onBlur={commitHourDraft}
+            onFocus={(event) => event.currentTarget.select()}
+            onKeyDown={(event) => handleSegmentKeyDown(event, 'hours')}
+          />
           <Button
             appearance="subtle"
             size="small"
@@ -330,14 +396,18 @@ export function TimeField({
             title="Increase minute"
             onClick={() => stepMinutes(1)}
           />
-          <button
-            type="button"
+          <input
+            type="text"
+            inputMode="numeric"
+            maxLength={2}
             className="ncas-time-picker__value"
-            aria-label={`${label} minute, ${String(minutes).padStart(2, '0')}`}
-            onKeyDown={(event) => onSegmentKeyDown(event, 'minutes')}
-          >
-            {String(minutes).padStart(2, '0')}
-          </button>
+            aria-label={`${label} minute`}
+            value={minuteDraft}
+            onChange={handleMinuteChange}
+            onBlur={commitMinuteDraft}
+            onFocus={(event) => event.currentTarget.select()}
+            onKeyDown={(event) => handleSegmentKeyDown(event, 'minutes')}
+          />
           <Button
             appearance="subtle"
             size="small"
