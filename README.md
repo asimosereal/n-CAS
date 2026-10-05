@@ -49,6 +49,39 @@ Two standing notes on the size:
 
 ---
 
+## Deploying to Vercel
+
+`vercel.json` pins the framework:
+
+```json
+{ "$schema": "https://openapi.vercel.sh/vercel.json", "framework": "nextjs" }
+```
+
+That file exists because of a specific failure. This project builds to `.next/`, which is where
+Next.js puts its output. Vercel only looks in `.next/` when it has detected the Next.js framework;
+under any other preset it falls back to the static-site default, whose output directory is
+`public/`, and the build then fails with:
+
+```
+No Output Directory named "public" found after the Build completed.
+```
+
+There is no `public/` directory in this repository, and there does not need to be one. Pinning
+`"framework": "nextjs"` in the repository settles the question at source, so a fresh Vercel
+project cannot come up with the wrong preset.
+
+The equivalent dashboard setting is **Project → Settings → Build & Development Settings →
+Framework Preset → Next.js**, followed by a redeploy. Either one is sufficient; the file is the
+one that travels with the code.
+
+Two further settings worth checking if a build ever fails for a different reason:
+
+* **Root Directory** must be the repository root — the folder containing `package.json`. Left
+  blank, it already is.
+* **Node.js Version** must be 18.18 or later; Next 15 does not build on 16. Vercel defaults to 22.
+
+---
+
 ## The five screens
 
 | # | Route | Screen | Purpose |
