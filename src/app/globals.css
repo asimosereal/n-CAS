@@ -1,0 +1,1297 @@
+/* ==================================================================
+   n-CAS — APPLICATION LAYOUT
+   ------------------------------------------------------------------
+   The WinUI layer (src/winui) supplies the control styling and the
+   --winui-* token dictionaries; this file supplies only the furniture
+   those tokens are not responsible for: the desktop window, the
+   navigation rail, the header band, the summary strip and the reader
+   station. Every value here is read from a WinUI token, so the whole
+   page follows the light and dark dictionaries without a second set
+   of rules.
+   ================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--winui-solid-background-fill-base);
+  color: var(--winui-text-fill-primary);
+  font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: var(--winui-text-base-medium, 14px);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The application's own root surface, one level inside FluentProvider.
+   It is a wrapper rather than a class on the provider itself, because Fluent
+   copies the provider's className onto the provider it mounts in the portal
+   root — and a `height: 100%` up there stretches that portal provider over the
+   whole window, which Fluent then paints opaque. See src/app/providers.tsx. */
+.ncas-root {
+  min-height: 100%;
+  height: 100%;
+}
+
+/* ------------------------------------------------------------------
+   Typography blocks
+   ------------------------------------------------------------------
+   Fluent's Text presets set `display: inline` on whatever element they render,
+   so a <h2> or a <p> built from one of them does not start a new line. Restoring
+   the block display for the elements that are given a real block tag is done
+   once here rather than fought with a style prop at every use site — the
+   typography, which is what the design system actually owns, is left alone. */
+h1.fui-Text,
+h2.fui-Text,
+h3.fui-Text,
+h4.fui-Text,
+h5.fui-Text,
+h6.fui-Text,
+p.fui-Text {
+  display: block;
+}
+
+/* ------------------------------------------------------------------
+   Desktop window
+   ------------------------------------------------------------------ */
+
+.ncas-window {
+  display: grid;
+  grid-template-columns: 264px minmax(0, 1fr);
+  height: 100%;
+  background: var(--winui-solid-background-fill-base);
+}
+
+/* ------------------------------------------------------------------
+   Navigation rail
+   ------------------------------------------------------------------ */
+
+.ncas-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 8px;
+  overflow-y: auto;
+  background: var(--winui-solid-background-fill-base-alt);
+  border-right: 1px solid var(--winui-divider-stroke-default);
+}
+
+.ncas-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 14px;
+}
+
+.ncas-brand__mark {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  background: var(--winui-accent-fill-default);
+  color: var(--winui-text-on-accent-fill-primary);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+
+.ncas-brand__name {
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1.1;
+}
+
+.ncas-nav__group {
+  padding: 14px 10px 4px;
+  color: var(--winui-text-fill-secondary);
+  font-size: 12px;
+}
+
+.ncas-nav__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: var(--winui-control-corner-radius, 4px);
+  color: var(--winui-text-fill-primary);
+  text-decoration: none;
+  font-size: 14px;
+  position: relative;
+}
+
+.ncas-nav__item:hover {
+  background: var(--winui-subtle-fill-secondary);
+}
+
+.ncas-nav__item[aria-current='page'] {
+  background: var(--winui-subtle-fill-secondary);
+  font-weight: 600;
+}
+
+/* WinUI marks the selected item with a short accent bar, not a filled pill. */
+.ncas-nav__item[aria-current='page']::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 16px;
+  border-radius: 2px;
+  background: var(--winui-accent-fill-default);
+}
+
+.ncas-nav__spacer {
+  flex: 1;
+}
+
+/* ------------------------------------------------------------------
+   Main column
+   ------------------------------------------------------------------ */
+
+.ncas-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.ncas-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 18px 28px 16px;
+  background: var(--winui-layer-fill-default);
+  border-bottom: 1px solid var(--winui-divider-stroke-default);
+}
+
+.ncas-header__titles {
+  min-width: 0;
+}
+
+.ncas-header__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  margin-top: 6px;
+}
+
+.ncas-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.ncas-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 28px 28px;
+}
+
+/* ------------------------------------------------------------------
+   Small shared pieces
+   ------------------------------------------------------------------ */
+
+/* A labelled value used in the header and on the review screen. */
+.ncas-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ncas-field__label {
+  color: var(--winui-text-fill-secondary);
+  font-size: 12px;
+}
+
+.ncas-field__value {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Attendance-active indicator: a WinUI-style info badge, not a flashing dot. */
+.ncas-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 12px;
+  background: var(--winui-system-fill-success-background);
+  color: var(--winui-system-fill-success);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ncas-live__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* ------------------------------------------------------------------
+   Summary strip
+   ------------------------------------------------------------------ */
+
+.ncas-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.ncas-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: var(--winui-overlay-corner-radius, 8px);
+  background: var(--winui-card-background-fill-default);
+  border: 1px solid var(--winui-card-stroke-default);
+}
+
+.ncas-metric__value {
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+
+.ncas-metric__label {
+  color: var(--winui-text-fill-secondary);
+  font-size: 12px;
+}
+
+.ncas-metric--success .ncas-metric__value {
+  color: var(--winui-system-fill-success);
+}
+.ncas-metric--caution .ncas-metric__value {
+  color: var(--winui-system-fill-caution);
+}
+.ncas-metric--critical .ncas-metric__value {
+  color: var(--winui-system-fill-critical);
+}
+.ncas-metric--attention .ncas-metric__value {
+  color: var(--winui-system-fill-attention);
+}
+.ncas-metric--accent .ncas-metric__value {
+  color: var(--winui-accent-fill-default);
+}
+
+/* ------------------------------------------------------------------
+   Panels
+   ------------------------------------------------------------------ */
+
+.ncas-panel {
+  border-radius: var(--winui-overlay-corner-radius, 8px);
+  background: var(--winui-card-background-fill-default);
+  border: 1px solid var(--winui-card-stroke-default);
+  overflow: hidden;
+}
+
+.ncas-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--winui-divider-stroke-default);
+}
+
+.ncas-panel__body {
+  padding: 16px 18px;
+}
+
+.ncas-panel__body--flush {
+  padding: 0;
+}
+
+.ncas-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* A stack's children keep their natural height and the stack scrolls if it has
+   to. Without this a flex item shrinks to fit instead, and because a panel hides
+   its own overflow to keep its corners, the shrinking silently cuts the bottom
+   off the panel. */
+.ncas-stack > * {
+  flex-shrink: 0;
+}
+
+.ncas-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.75fr) minmax(272px, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+/* Special Events puts its creation form across the full width, so this split
+   is only the register and the selected event's details. */
+.ncas-columns--events {
+  grid-template-columns: minmax(0, 1.9fr) minmax(318px, 1fr);
+}
+
+/* The creation form: who on the left, when and why on the right. */
+.ncas-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1.02fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .ncas-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ------------------------------------------------------------------
+   Special Events — the parts Fluent does not provide
+   ------------------------------------------------------------------ */
+
+/* Seven columns need tighter gutters than the Fluent default. */
+.ncas-table--events .fui-TableHeaderCell,
+.ncas-table--events .fui-TableCell {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.ncas-table--events .fui-TableHeaderCell:first-child,
+.ncas-table--events .fui-TableCell:first-child {
+  padding-left: 14px;
+}
+
+/* the scrollable multi-select list of students */
+.ncas-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 230px;
+  overflow-y: auto;
+  padding: 6px 8px;
+  border-radius: var(--winui-control-corner-radius, 4px);
+  background: var(--winui-solid-background-fill-secondary);
+  border: 1px solid var(--winui-control-stroke-default);
+}
+
+.ncas-grid-2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+}
+
+.ncas-grid-2 > * {
+  min-width: 0;
+}
+
+/* The three time fields share one row on the Special Events form. */
+.ncas-grid-3 {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+}
+
+.ncas-grid-3 > * {
+  min-width: 0;
+}
+
+/* Fluent's combobox input carries roughly twenty characters of intrinsic width,
+   which would otherwise push this row wider than the column it sits in and
+   squeeze the date field down to a couple of characters. */
+.ncas-grid-3 .fui-Combobox,
+.ncas-grid-3 .fui-Combobox__input {
+  width: 100%;
+  min-width: 0;
+}
+
+/* the month grid inside the date field's flyout */
+.ncas-cal {
+  display: grid;
+  gap: 8px;
+  width: 266px;
+}
+
+.ncas-cal__head,
+.ncas-cal__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ncas-cal__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.ncas-cal__weekday {
+  display: grid;
+  place-items: center;
+  height: 22px;
+  font-size: 11px;
+  color: var(--winui-text-fill-secondary);
+}
+
+/* Doubled so it outranks Fluent's own min-width on a Button. */
+.ncas-cal__day.ncas-cal__day {
+  min-width: 0;
+  width: 100%;
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.ncas-cal__day[data-outside='true'] {
+  opacity: 0.45;
+}
+
+.ncas-cal__day[data-today='true'] {
+  box-shadow: inset 0 0 0 1px var(--winui-accent-fill-default);
+}
+
+/* a table cell that acts as a link into the details panel */
+.ncas-linkish {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--winui-accent-fill-default);
+  text-align: left;
+  cursor: pointer;
+}
+
+.ncas-linkish:hover {
+  text-decoration: underline;
+}
+
+.ncas-linkish:focus-visible {
+  outline: 2px solid var(--winui-accent-fill-default);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+.ncas-table-wrap .fui-TableRow[data-selected='true'] {
+  background: var(--winui-subtle-fill-secondary);
+}
+
+/* the validation list inside an error message bar */
+.ncas-problems {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 2px;
+}
+
+@media (max-width: 1180px) {
+  .ncas-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ------------------------------------------------------------------
+   Attendance table
+   ------------------------------------------------------------------ */
+
+.ncas-table-wrap {
+  max-height: 460px;
+  overflow: auto;
+}
+
+.ncas-num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------------
+   Record images (review screen)
+   ------------------------------------------------------------------ */
+
+.ncas-image {
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--winui-control-corner-radius, 4px);
+  background: var(--winui-solid-background-fill-tertiary);
+  border: 1px dashed var(--winui-control-stroke-default);
+  color: var(--winui-text-fill-secondary);
+}
+
+.ncas-image__initials {
+  font-size: 40px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--winui-text-fill-primary);
+}
+
+/* ------------------------------------------------------------------
+   Reader station (screen 1)
+   ------------------------------------------------------------------ */
+
+.ncas-kiosk {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
+  overflow: hidden;
+  background: var(--winui-solid-background-fill-base);
+}
+
+.ncas-kiosk__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 368px;
+  gap: 20px;
+  padding: 20px 28px 24px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* The station and the panel under it are centred as a group; only the
+   demonstration column beside them scrolls. A student should not be able to
+   scroll the reader away. */
+.ncas-kiosk__body > :first-child {
+  min-height: 0;
+  justify-content: center;
+}
+
+.ncas-kiosk__body > aside {
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* The panels keep their natural height and the column scrolls if it has to.
+   Without this a flex item shrinks to fit, and because a panel hides its own
+   overflow to keep its corners, the shrinking silently cuts the last few lines
+   off whichever panel is at the bottom. */
+.ncas-kiosk__body aside > * {
+  flex-shrink: 0;
+}
+
+@media (max-width: 1180px) {
+  .ncas-kiosk__body {
+    grid-template-columns: minmax(0, 1fr);
+    overflow-y: auto;
+  }
+}
+
+/* ==================================================================
+   THE READER STATION — physical hardware
+   ------------------------------------------------------------------
+   The scanner is drawn rather than illustrated: a casing, a recessed
+   display, a scanning well, a camera module, three lamps and a speaker
+   grille. Its own colours are fixed rather than taken from the theme
+   tokens, because a piece of moulded plastic does not get lighter when
+   the application switches to the light scheme. Everything around it,
+   and every glow state on it, still comes from the tokens.
+   ================================================================== */
+
+.ncas-arena {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 552px;
+  padding: 16px;
+  border-radius: var(--winui-overlay-corner-radius, 8px);
+  background: var(--winui-card-background-fill-default);
+  border: 1px solid var(--winui-card-stroke-default);
+  overflow: hidden;
+  /* the card is dragged with the pointer, so the arena must not pan */
+  touch-action: none;
+}
+
+/* ---- the device -------------------------------------------------- */
+
+.ncas-device {
+  --hw-casing: #3b3f45;
+  --hw-casing-hi: #565b63;
+  --hw-casing-lo: #22252a;
+  --hw-well: #0f1114;
+  --hw-screen: #0d1a14;
+  --hw-ink: #a8e9c2;
+
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: 11px;
+  width: 326px;
+  padding: 15px 15px 13px;
+  border-radius: 22px;
+  background: linear-gradient(
+    180deg,
+    var(--hw-casing-hi) 0%,
+    var(--hw-casing) 22%,
+    var(--hw-casing) 70%,
+    var(--hw-casing-lo) 100%
+  );
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.35),
+    0 20px 34px -16px rgba(0, 0, 0, 0.55),
+    0 3px 8px rgba(0, 0, 0, 0.26);
+  outline: 3px solid transparent;
+  outline-offset: 5px;
+  transition: outline-color 0.2s ease;
+  user-select: none;
+}
+
+/* the detection area itself, drawn at exactly the trigger radius */
+.ncas-device[data-phase='DETECTED'],
+.ncas-device[data-phase='CAPTURING'] {
+  outline-color: rgba(90, 160, 230, 0.45);
+}
+
+.ncas-device__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ncas-device__sku {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* ---- camera module ----------------------------------------------- */
+
+.ncas-device__camera {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: var(--hw-well);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.ncas-device__lens {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, #4c5765 0%, #1b1f26 44%, #07080a 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  transition: box-shadow 0.18s ease;
+}
+
+.ncas-device__camera-led {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #2b2f36;
+  transition: background 0.14s ease, box-shadow 0.14s ease;
+}
+
+.ncas-device__camera-ring {
+  position: absolute;
+  inset: -1px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  pointer-events: none;
+}
+
+.ncas-device__camera[data-on='true'] .ncas-device__lens {
+  box-shadow:
+    inset 0 0 0 1px rgba(190, 225, 255, 0.6),
+    0 0 10px 2px rgba(150, 200, 255, 0.5);
+}
+
+.ncas-device__camera[data-on='true'] .ncas-device__camera-led {
+  background: #eef7ff;
+  box-shadow: 0 0 8px 2px rgba(190, 225, 255, 0.9);
+}
+
+.ncas-device__camera[data-on='true'] .ncas-device__camera-ring {
+  border-color: rgba(150, 200, 255, 0.65);
+  animation: ncas-capture-ring 1s ease-out infinite;
+}
+
+@keyframes ncas-capture-ring {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(1.45);
+    opacity: 0;
+  }
+}
+
+/* ---- display ----------------------------------------------------- */
+
+.ncas-device__display {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 3px;
+  min-height: 96px;
+  padding: 12px 10px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #091410 0%, var(--hw-screen) 100%);
+  box-shadow:
+    inset 0 2px 7px rgba(0, 0, 0, 0.78),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  text-align: center;
+}
+
+.ncas-device__display-head {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--hw-ink);
+}
+
+.ncas-device__display-student {
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1.15;
+  color: #eafff3;
+}
+
+.ncas-device__display-hint {
+  font-size: 12px;
+  color: rgba(168, 233, 194, 0.45);
+}
+
+.ncas-device__display[data-tone='accent'] .ncas-device__display-head {
+  color: #a9d8ff;
+}
+.ncas-device__display[data-tone='success'] .ncas-device__display-head {
+  color: #9df0bd;
+}
+.ncas-device__display[data-tone='caution'] .ncas-device__display-head {
+  color: #ffd79a;
+}
+.ncas-device__display[data-tone='attention'] .ncas-device__display-head {
+  color: #ffc79a;
+}
+.ncas-device__display[data-tone='critical'] .ncas-device__display-head {
+  color: #ffb0a8;
+}
+
+/* ---- the RFID scanning zone -------------------------------------- */
+
+.ncas-zone {
+  position: relative;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 5px;
+  height: 134px;
+  border-radius: 12px;
+  background: radial-gradient(circle at 50% 56%, #1a2530 0%, var(--hw-well) 64%);
+  box-shadow:
+    inset 0 2px 9px rgba(0, 0, 0, 0.82),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+/* The ring marks the spot the card has to reach — it is the same radius the
+   drag code tests against, so what the student sees is what the system does. */
+.ncas-zone::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 232px;
+  height: 232px;
+  margin: -116px 0 0 -116px;
+  border-radius: 50%;
+  border: 1px dashed rgba(120, 190, 255, 0);
+  transition: border-color 0.18s ease;
+  pointer-events: none;
+}
+
+.ncas-zone[data-active='true']::after {
+  border-color: rgba(120, 190, 255, 0.4);
+}
+
+.ncas-zone__glyph {
+  position: relative;
+  z-index: 2;
+  font-size: 36px;
+  color: rgba(190, 215, 240, 0.5);
+  transition: color 0.2s ease;
+}
+
+.ncas-zone[data-active='true'] .ncas-zone__glyph {
+  color: #9fd2ff;
+}
+
+.ncas-zone__caption {
+  position: relative;
+  z-index: 2;
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.ncas-zone__wave {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 58px;
+  height: 58px;
+  margin: -29px 0 0 -29px;
+  border-radius: 50%;
+  border: 1px solid rgba(120, 190, 255, 0);
+  pointer-events: none;
+}
+
+.ncas-zone[data-active='true'] .ncas-zone__wave {
+  border-color: rgba(120, 190, 255, 0.55);
+  animation: ncas-hw-wave 1.5s ease-out infinite;
+}
+
+.ncas-zone[data-active='true'] .ncas-zone__wave--b {
+  animation-delay: 0.4s;
+}
+
+.ncas-zone[data-active='true'] .ncas-zone__wave--c {
+  animation-delay: 0.8s;
+}
+
+@keyframes ncas-hw-wave {
+  0% {
+    transform: scale(0.55);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
+
+/* ---- the three hardware indicators ------------------------------- */
+
+.ncas-device__leds {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  padding-top: 2px;
+}
+
+.ncas-led2 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  font-size: 9px;
+  letter-spacing: 0.09em;
+  color: rgba(255, 255, 255, 0.36);
+}
+
+.ncas-led2__lamp {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #2b2f36;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  transition: background 0.12s ease, box-shadow 0.12s ease;
+}
+
+.ncas-led2[data-lamp='green'] .ncas-led2__lamp,
+.ncas-led2__lamp[data-lamp='green'] {
+  background: #3ddc84;
+  box-shadow: 0 0 7px 1px rgba(61, 220, 132, 0.7);
+}
+
+.ncas-led2[data-lamp='blue'] .ncas-led2__lamp,
+.ncas-led2__lamp[data-lamp='blue'] {
+  background: #4fa8ff;
+  box-shadow: 0 0 10px 2px rgba(79, 168, 255, 0.85);
+  animation: ncas-hw-pulse 1.1s ease-in-out infinite;
+}
+
+.ncas-led2[data-lamp='white'] .ncas-led2__lamp,
+.ncas-led2__lamp[data-lamp='white'] {
+  background: #f3f9ff;
+  box-shadow: 0 0 11px 3px rgba(200, 232, 255, 0.95);
+  animation: ncas-hw-pulse 0.75s ease-in-out infinite;
+}
+
+.ncas-led2[data-lamp='amber'] .ncas-led2__lamp,
+.ncas-led2__lamp[data-lamp='amber'] {
+  background: #ffb020;
+  box-shadow: 0 0 9px 2px rgba(255, 176, 32, 0.85);
+}
+
+.ncas-led2[data-lamp='red'] .ncas-led2__lamp,
+.ncas-led2__lamp[data-lamp='red'] {
+  background: #ff5a4d;
+  box-shadow: 0 0 9px 2px rgba(255, 90, 77, 0.85);
+}
+
+@keyframes ncas-hw-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ---- speaker grille and branding --------------------------------- */
+
+.ncas-device__grille {
+  width: 78px;
+  height: 10px;
+  margin: 0 auto;
+  border-radius: 5px;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.17) 1px, transparent 1.5px);
+  background-size: 6px 6px;
+  background-position: center;
+}
+
+.ncas-device__brand {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-top: 1px;
+}
+
+.ncas-device__brand-name {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.ncas-device__brand-sub {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.32);
+}
+
+/* ---- the student card ---------------------------------------------
+   Modelled on the school's own student card: the crest and the school
+   name at the top left, STUDENT at the top right, the photograph below
+   it, and the three lines the office actually reads off the card — the
+   student number, the student's name, and the parent account number —
+   sitting on the orange band that sweeps up to the right.
+   ------------------------------------------------------------------- */
+
+.ncas-scard {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 3;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 7px;
+  width: 172px;
+  height: 266px;
+  padding: 11px 12px 13px;
+  border-radius: 12px;
+  background: #eef0f3;
+  border: 1px solid rgba(20, 30, 50, 0.16);
+  box-shadow:
+    0 18px 30px -16px rgba(15, 25, 45, 0.5),
+    0 2px 6px rgba(15, 25, 45, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  will-change: transform;
+  transition: box-shadow 0.18s ease;
+}
+
+/* The card glides when the station moves it and tracks the pointer exactly
+   when the student does; which of the two applies is set inline, because a
+   transform transition left running during a drag makes the card's measured
+   position lag behind the pointer. */
+
+.ncas-scard[data-dragging='true'] {
+  cursor: grabbing;
+  box-shadow:
+    0 28px 44px -18px rgba(15, 25, 45, 0.6),
+    0 4px 10px rgba(15, 25, 45, 0.22);
+}
+
+.ncas-scard[data-near='true'] {
+  box-shadow:
+    0 20px 34px -16px rgba(20, 60, 120, 0.5),
+    0 0 0 2px rgba(79, 168, 255, 0.55),
+    0 2px 6px rgba(15, 25, 45, 0.2);
+}
+
+.ncas-scard:focus-visible {
+  outline: 2px solid var(--winui-accent-fill-default);
+  outline-offset: 3px;
+}
+
+/* The printed band. It carries the card's own rounding so the sheet does not
+   need to clip, which is what lets the drag caption hang below the card. */
+.ncas-scard__band {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background: linear-gradient(46deg, #d94f16 0%, #e8801f 42%, #f3c433 100%);
+  clip-path: polygon(0 62%, 100% 15%, 100% 100%, 0 100%);
+}
+
+/* the fine zig-zag printed over the yellow end of the band */
+.ncas-scard__band::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    118deg,
+    rgba(255, 255, 255, 0.1) 0 7px,
+    rgba(255, 255, 255, 0) 7px 16px
+  );
+}
+
+.ncas-scard__head {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.ncas-scard__mark {
+  flex: 0 0 auto;
+  width: 23px;
+  height: 23px;
+}
+
+.ncas-scard__mark svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.ncas-scard__schoolblock {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.ncas-scard__school {
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: 0.01em;
+  color: #1b2733;
+}
+
+.ncas-scard__school2 {
+  font-size: 6px;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #1b2733;
+}
+
+.ncas-scard__city {
+  font-size: 6.5px;
+  line-height: 1.3;
+  color: #6b7684;
+}
+
+.ncas-scard__kind {
+  flex: 0 0 auto;
+  padding-bottom: 2px;
+  border-bottom: 1px solid #d9622a;
+  color: #d9622a;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ncas-scard__photo {
+  position: relative;
+  z-index: 1;
+  align-self: start;
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 72px;
+  border-radius: 2px;
+  background: #ffffff;
+  border: 1px solid rgba(20, 30, 50, 0.14);
+  box-shadow: 0 1px 2px rgba(20, 30, 50, 0.18);
+}
+
+.ncas-scard__initials {
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #38495c;
+}
+
+.ncas-scard__identity {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 1px;
+}
+
+.ncas-scard__id {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 1px rgba(95, 35, 0, 0.3);
+}
+
+.ncas-scard__name {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: #ffffff;
+  text-shadow: 0 1px 1px rgba(95, 35, 0, 0.3);
+}
+
+.ncas-scard__parent {
+  font-size: 9.5px;
+  letter-spacing: 0.03em;
+  color: rgba(255, 255, 255, 0.9);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 1px rgba(95, 35, 0, 0.3);
+}
+
+.ncas-scard__grab {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -18px;
+  text-align: center;
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  color: var(--winui-text-fill-secondary);
+  pointer-events: none;
+}
+
+/* ---- the state catalogue in the right-hand panel ----------------- */
+
+.ncas-preview {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.ncas-preview__lamps {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.ncas-preview__lamps .ncas-led2__lamp {
+  width: 8px;
+  height: 8px;
+  /* a legend is a still picture; the lamps on it do not pulse */
+  animation: none;
+}
+
+/* The result panel the student reads after a tap. It holds its height from
+   the first paint, so the station does not jump when a result arrives. */
+.ncas-result {
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  min-height: 116px;
+  padding: 20px 22px;
+  border-radius: var(--winui-overlay-corner-radius, 8px);
+  background: var(--winui-card-background-fill-secondary);
+  border: 1px solid var(--winui-card-stroke-default);
+  border-left-width: 4px;
+  border-left-color: var(--winui-control-strong-fill-default);
+}
+
+.ncas-result--success {
+  border-left-color: var(--winui-system-fill-success);
+}
+.ncas-result--caution {
+  border-left-color: var(--winui-system-fill-caution);
+}
+.ncas-result--critical {
+  border-left-color: var(--winui-system-fill-critical);
+}
+.ncas-result--attention {
+  border-left-color: var(--winui-system-fill-attention);
+}
+.ncas-result--accent {
+  border-left-color: var(--winui-accent-fill-default);
+}
+
+.ncas-result__headline {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.ncas-result__name {
+  font-size: 26px;
+  font-weight: 600;
+}
+
+/* The demo card picker under the station. */
+/* ------------------------------------------------------------------
+   Utilities
+   ------------------------------------------------------------------ */
+
+.ncas-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ncas-row--between {
+  justify-content: space-between;
+}
+
+.ncas-muted {
+  color: var(--winui-text-fill-secondary);
+}
+
+.ncas-tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The audit trail on the review screen. */
+.ncas-timeline {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ncas-timeline__item {
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--winui-divider-stroke-default);
+}
+
+.ncas-timeline__item:last-child {
+  border-bottom: 0;
+}
+
+.ncas-timeline__time {
+  color: var(--winui-text-fill-secondary);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  padding-top: 2px;
+}
