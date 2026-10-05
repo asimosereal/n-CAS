@@ -1295,3 +1295,94 @@ p.fui-Text {
   font-size: 12px;
   padding-top: 2px;
 }
+
+
+/* ------------------------------------------------------------------
+   WinUI-style time picker
+   ------------------------------------------------------------------ */
+
+.ncas-time-picker {
+  display: inline-flex;
+  align-items: stretch;
+  width: 100%;
+  min-height: 72px;
+  padding: 4px;
+  border: 1px solid var(--winui-control-stroke-default);
+  border-radius: var(--winui-control-corner-radius, 4px);
+  background: var(--winui-control-fill-default);
+  box-shadow: inset 0 0 0 1px var(--winui-control-stroke-default);
+  overflow: hidden;
+}
+
+.ncas-time-picker:focus-within {
+  border-color: var(--winui-accent-fill-default);
+  box-shadow:
+    inset 0 0 0 1px var(--winui-accent-fill-default),
+    0 0 0 1px var(--winui-accent-fill-default);
+}
+
+.ncas-time-picker__segment {
+  display: grid;
+  grid-template-rows: 20px 28px 20px;
+  min-width: 72px;
+  flex: 1 1 0;
+}
+
+.ncas-time-picker__segment .fui-Button {
+  min-width: 0;
+  width: 100%;
+  height: 20px;
+  min-height: 20px;
+  padding: 0;
+  border-radius: 0;
+  color: var(--winui-text-fill-secondary);
+}
+
+.ncas-time-picker__segment .fui-Button:hover {
+  background: var(--winui-subtle-fill-secondary);
+  color: var(--winui-text-fill-primary);
+}
+
+.ncas-time-picker__segment .fui-Button svg {
+  width: 14px;
+  height: 14px;
+}
+
+.ncas-time-picker__value {
+  width: 100%;
+  min-height: 28px;
+  border: 0;
+  border-radius: 2px;
+  background: var(--winui-subtle-fill-secondary);
+  color: var(--winui-text-fill-primary);
+  font: inherit;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 28px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  cursor: pointer;
+  outline: none;
+}
+
+.ncas-time-picker__value:hover {
+  background: var(--winui-subtle-fill-tertiary);
+}
+
+.ncas-time-picker__value:focus-visible {
+  background: var(--winui-subtle-fill-tertiary);
+  box-shadow: inset 0 0 0 2px var(--winui-accent-fill-default);
+}
+
+.ncas-time-picker__colon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  padding-top: 1px;
+  color: var(--winui-text-fill-secondary);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 28px;
+  font-variant-numeric: tabular-nums;
+}
