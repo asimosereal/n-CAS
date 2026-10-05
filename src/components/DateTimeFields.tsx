@@ -17,6 +17,8 @@ import {
   CalendarLtr20Regular,
   ChevronLeft20Regular,
   ChevronRight20Regular,
+  ChevronUp20Regular,
+  ChevronDown20Regular,
 } from '@fluentui/react-icons';
 
 /**
@@ -248,41 +250,107 @@ export function TimeField({
   onChange: (time: string) => void;
   hint?: string;
 }) {
-  const [text, setText] = React.useState(value);
+  const parsed = normaliseTime(value) ?? '08:00';
+  const [hoursText, minutesText] = parsed.split(':');
+  const hours = Number(hoursText);
+  const minutes = Number(minutesText);
 
-  React.useEffect(() => setText(value), [value]);
+  const commit = (nextHours: number, nextMinutes: number) => {
+    const h = Math.min(23, Math.max(0, nextHours));
+    const m = Math.min(59, Math.max(0, nextMinutes));
+    onChange(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+  };
+
+  const stepHours = (delta: number) => commit(hours + delta, minutes);
+  const stepMinutes = (delta: number) => {
+    const total = hours * 60 + minutes + delta;
+    const wrapped = (total + 1440) % 1440;
+    commit(Math.floor(wrapped / 60), wrapped % 60);
+  };
+
+  const onSegmentKeyDown = (
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    segment: 'hours' | 'minutes',
+  ) => {
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      segment === 'hours' ? stepHours(1) : stepMinutes(1);
+    } else if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      segment === 'hours' ? stepHours(-1) : stepMinutes(-1);
+    } else if (event.key === 'Home') {
+      event.preventDefault();
+      segment === 'hours' ? commit(0, minutes) : commit(hours, 0);
+    } else if (event.key === 'End') {
+      event.preventDefault();
+      segment === 'hours' ? commit(23, minutes) : commit(hours, 59);
+    }
+  };
 
   return (
     <Field label={label} hint={hint}>
-      <Combobox
-        freeform
-        value={text}
-        selectedOptions={value ? [value] : []}
-        placeholder="Select a time"
-        onOptionSelect={(_, data) => {
-          if (data.optionValue) {
-            setText(data.optionValue);
-            onChange(data.optionValue);
-          }
-        }}
-        onChange={(event) => {
-          const raw = event.target.value;
-          setText(raw);
-          const parsed = normaliseTime(raw);
-          // Only a time the school day contains is allowed through, so a typo
-          // cannot leave the form holding something the engine cannot compare.
-          if (parsed && TIMES.includes(parsed)) onChange(parsed);
-        }}
-      >
-        {TIMES.map((t) => (
-          <Option key={t} value={t}>
-            {t}
-          </Option>
-        ))}
-      </Combobox>
+      <div className="ncas-time-picker" role="group" aria-label={label}>
+        <div className="ncas-time-picker__segment">
+          <Button
+            appearance="subtle"
+            size="small"
+            icon={<ChevronUp20Regular />}
+            aria-label={`Increase ${label} hour`}
+            title="Increase hour"
+            onClick={() => stepHours(1)}
+          />
+          <button
+            type="button"
+            className="ncas-time-picker__value"
+            aria-label={`${label} hour, ${String(hours).padStart(2, '0')}`}
+            onKeyDown={(event) => onSegmentKeyDown(event, 'hours')}
+          >
+            {String(hours).padStart(2, '0')}
+          </button>
+          <Button
+            appearance="subtle"
+            size="small"
+            icon={<ChevronDown20Regular />}
+            aria-label={`Decrease ${label} hour`}
+            title="Decrease hour"
+            onClick={() => stepHours(-1)}
+          />
+        </div>
+
+        <span className="ncas-time-picker__colon" aria-hidden>
+          :
+        </span>
+
+        <div className="ncas-time-picker__segment">
+          <Button
+            appearance="subtle"
+            size="small"
+            icon={<ChevronUp20Regular />}
+            aria-label={`Increase ${label} minute`}
+            title="Increase minute"
+            onClick={() => stepMinutes(1)}
+          />
+          <button
+            type="button"
+            className="ncas-time-picker__value"
+            aria-label={`${label} minute, ${String(minutes).padStart(2, '0')}`}
+            onKeyDown={(event) => onSegmentKeyDown(event, 'minutes')}
+          >
+            {String(minutes).padStart(2, '0')}
+          </button>
+          <Button
+            appearance="subtle"
+            size="small"
+            icon={<ChevronDown20Regular />}
+            aria-label={`Decrease ${label} minute`}
+            title="Decrease minute"
+            onClick={() => stepMinutes(-1)}
+          />
+        </div>
+      </div>
     </Field>
   );
 }
 
-/** The times the time field offers, for a caller that needs to dress a value. */
+/** The times the time field offers, for callers that need a list of school-day values. */
 export const TIME_OPTIONS = TIMES;
