@@ -7,8 +7,16 @@
  * rows, so it can never disagree with the register.
  */
 
-import type { AttendanceRecord, BreakRecord, ClassSession, Minutes, Student } from '../types';
+import type {
+  AttendanceRecord,
+  AuditEntry,
+  BreakRecord,
+  ClassSession,
+  Minutes,
+  Student,
+} from '../types';
 import { formatTime } from '../time';
+import { calculateAttendanceStatus, calculateLateMinutes } from './attendance-engine';
 
 export interface ReviewEvent {
   time: Minutes | null;
@@ -16,21 +24,52 @@ export interface ReviewEvent {
   detail: string;
 }
 
+/**
+ * describeRecordHistory()
+ * ------------------------------------------------------------------
+ * The narrative of one student's record: what they did, what the terminal did
+ * about it, and what a teacher decided.
+ *
+ * The teacher's own changes are written from the audit trail rather than from
+ * the record, when the audit has them. A record only remembers the *last*
+ * override, so reading the record would lose every earlier correction; the
+ * audit is append-only and keeps them all. A record that carries an override
+ * but no audit — a register restored without its log — still gets its timing
+ * line, from `overrideReason`, so nothing is ever silently missing.
+ */
 export function describeRecordHistory(
   record: AttendanceRecord,
   breaks: BreakRecord[],
   session: ClassSession,
   student: Student,
+  audit: AuditEntry[] = [],
 ): ReviewEvent[] {
   const events: ReviewEvent[] = [];
+  const logged = audit.filter((entry) => entry.recordId === record.recordId);
+  const hasAudit = (action: string) => logged.some((entry) => entry.action === action);
 
   if (record.entryTime !== null) {
+    /*
+     * What the tap produced is worked out from when it happened, not read from
+     * the record. A record only holds the current status, and a teacher may
+     * since have changed it — reading the record would make the timeline claim
+     * a student who arrived on time had been late all along, which is the one
+     * thing a history must not do.
+     */
+    const tapStatus = calculateAttendanceStatus(
+      record.entryTime,
+      session.startTime,
+      session.onTimeWindowMinutes,
+    );
+    const tapLate = calculateLateMinutes(
+      record.entryTime,
+      session.startTime,
+      session.onTimeWindowMinutes,
+    );
     events.push({
       time: record.entryTime,
       label:
-        record.status === 'LATE'
-          ? `Tap accepted — LATE by ${record.lateMinutes} min`
-          : 'Tap accepted — PRESENT',
+        tapStatus === 'LATE' ? `Tap accepted — LATE by ${tapLate} min` : 'Tap accepted — PRESENT',
       detail: `Card ${student.rfidCardId} matched ${student.name} in the RFID register`,
     });
   } else {
@@ -77,13 +116,16 @@ export function describeRecordHistory(
     }
   }
 
-  if (record.overrideReason) {
+  /* A teacher's change is a change, not a tap, so it is listed under the
+     record's changes rather than here whenever the audit trail has it. The
+     fallback keeps a restored register honest. */
+  if (record.overrideReason && !hasAudit('MANUAL_OVERRIDE')) {
     events.push({
       time: null,
       label: 'Manual override applied',
       detail: `${record.overrideReason} — record now ${record.status}, method ${record.verificationMethod}`,
     });
-  } else if (record.reviewStatus === 'CONFIRMED') {
+  } else if (record.reviewStatus === 'CONFIRMED' && !hasAudit('REVIEW_CONFIRMED')) {
     events.push({
       time: null,
       label: 'Review confirmed by teacher',
@@ -97,7 +139,17 @@ export function describeRecordHistory(
     });
   }
 
-  return events.sort((a, b) => (a.time ?? 0) - (b.time ?? 0));
+  /**
+   * Order by when each thing happened. A teacher's change carries no clock time
+   * of its own, and it can only have happened after everything the student did,
+   * so it sorts last rather than first — which is what treating a missing time
+   * as zero would do.
+   */
+  return events.sort((a, b) => when(a) - when(b));
+}
+
+function when(event: ReviewEvent): number {
+  return event.time === null ? Number.MAX_SAFE_INTEGER : event.time;
 }
 
 /** One-line description of where the identity check stands, for the review screen. */

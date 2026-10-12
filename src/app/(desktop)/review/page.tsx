@@ -30,7 +30,13 @@ import {
 } from '@/lib/fluent';
 import { Checkmark20Regular, Dismiss20Regular, Edit20Regular, ShieldTask20Regular } from '@fluentui/react-icons';
 import { HeaderField, LiveIndicator, PageHeader } from '@/components/PageHeader';
-import { AttendanceBadge, BreakBadge, ReviewBadge, needsAttention } from '@/components/StatusBadge';
+import {
+  AttendanceBadge,
+  BreakBadge,
+  ReviewBadge,
+  STATUS_CHOICES,
+  needsAttention,
+} from '@/components/StatusBadge';
 
 /**
  * SCREEN 3 — ATTENDANCE REVIEW AND MANUAL OVERRIDE
@@ -55,11 +61,17 @@ function initials(name: string): string {
     .join('');
 }
 
-const STATUS_CHOICES: { value: AttendanceStatus; label: string }[] = [
-  { value: 'PRESENT', label: 'Present' },
-  { value: 'LATE', label: 'Late' },
-  { value: 'ABSENT', label: 'Absent' },
-];
+/**
+ * Audit actions, in the words a teacher would use. The stored value is a
+ * constant for the log; this is what the log reads like on screen.
+ */
+const AUDIT_LABEL: Record<string, string> = {
+  MANUAL_OVERRIDE: 'Status changed by a teacher',
+  REVIEW_CONFIRMED: 'Record confirmed by a teacher',
+  EVENT_CREATED: 'Approved event created',
+  EVENT_UPDATED: 'Approved event changed',
+  EVENT_CANCELLED: 'Approved event cancelled',
+};
 
 export default function ReviewPage() {
   const { state, session, roster, override, confirmReview } = useApp();
@@ -69,8 +81,21 @@ export default function ReviewPage() {
     [roster],
   );
 
+  /**
+   * Records a teacher has already changed — on this screen, or from the status
+   * drop-down on the dashboard. They no longer need a decision, but they have to
+   * stay reachable: correcting a record clears its review flag, so without this
+   * list the only route to the change that was just made would disappear along
+   * with the flag.
+   */
+  const changed = React.useMemo(
+    () => roster.filter((row) => row.record?.reviewStatus === 'OVERRIDDEN'),
+    [roster],
+  );
+
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
-  const activeId = selectedId ?? flagged[0]?.student.studentId ?? null;
+  const activeId =
+    selectedId ?? flagged[0]?.student.studentId ?? changed[0]?.student.studentId ?? null;
   const active = roster.find((row) => row.student.studentId === activeId) ?? null;
 
   /* The draft a teacher is composing. Nothing reaches the register until the
@@ -260,7 +285,7 @@ export default function ReviewPage() {
                   </div>
                   <div className="ncas-panel__body">
                     <ul className="ncas-timeline">
-                      {describeRecordHistory(record, state.breaks, session, student).map(
+                      {describeRecordHistory(record, state.breaks, session, student, state.audit).map(
                         (event, index) => (
                           <li className="ncas-timeline__item" key={`${event.label}-${index}`}>
                             <span className="ncas-timeline__time">
@@ -280,10 +305,14 @@ export default function ReviewPage() {
                     {state.audit.filter((a) => a.recordId === record.recordId).length > 0 ? (
                       <>
                         <Divider style={{ margin: '12px 0' }} />
-                        <Caption1 className="ncas-muted">Record changes</Caption1>
+                        <Caption1 className="ncas-muted">Changes to this record</Caption1>
                         <ul className="ncas-timeline">
+                          {/* The audit is kept newest-first; this panel sits under a
+                              timeline that reads oldest-first, so it is turned round to
+                              match and the whole history reads in one direction. */}
                           {state.audit
                             .filter((a) => a.recordId === record.recordId)
+                            .reverse()
                             .map((entry) => (
                               <li className="ncas-timeline__item" key={entry.auditId}>
                                 <span className="ncas-timeline__time">
@@ -291,7 +320,7 @@ export default function ReviewPage() {
                                 </span>
                                 <span>
                                   <Body2 style={{ display: 'block', fontWeight: 600 }}>
-                                    {entry.action.replace(/_/g, ' ')}
+                                    {AUDIT_LABEL[entry.action] ?? entry.action.replace(/_/g, ' ')}
                                   </Body2>
                                   <Caption1 className="ncas-muted">
                                     {entry.oldValue} → {entry.newValue} · {entry.reason} ·{' '}
@@ -426,6 +455,32 @@ export default function ReviewPage() {
                     </Button>
                   ))
                 )}
+
+                {changed.length > 0 ? (
+                  <>
+                    <Divider style={{ margin: '4px 0' }} />
+                    <div className="ncas-row ncas-row--between">
+                      <Caption1 className="ncas-muted">Changed by a teacher</Caption1>
+                      <Badge appearance="tint" color="informative">
+                        {changed.length}
+                      </Badge>
+                    </div>
+                    {changed.map((row) => (
+                      <Button
+                        key={row.student.studentId}
+                        appearance={row.student.studentId === activeId ? 'primary' : 'subtle'}
+                        onClick={() => setSelectedId(row.student.studentId)}
+                        style={{ justifyContent: 'flex-start' }}
+                      >
+                        {row.student.name} · {row.student.studentId}
+                      </Button>
+                    ))}
+                    <Caption1 className="ncas-muted">
+                      Settled records stay here so the change and the reason behind it can be read
+                      back at any time.
+                    </Caption1>
+                  </>
+                ) : null}
               </div>
             </section>
           </div>

@@ -234,6 +234,39 @@ exactly as every other control does, and add no dependency.
 
 ---
 
+## Correcting a record from the register
+
+A teacher looking at the room is the person best placed to say a record is wrong, so the
+dashboard's **Status** column is a WinUI drop-down rather than a badge. It does not write
+anything on its own: choosing a different status raises **Change attendance status**, which
+shows what the record says now, what it will say, and asks for a reason. Only *Save correction*
+writes.
+
+The reason is not optional, and that is the engine's rule rather than the screen's —
+`applyManualOverride()` rejects an override with an empty reason. What that buys is a review
+history that can be read back weeks later and still make sense.
+
+Three consequences worth knowing:
+
+1. **A row with no record cannot be corrected.** Its drop-down reads *Not recorded* and is
+   disabled. A manual override corrects a record; it does not invent one, and silently creating a
+   row would hide the fact that the student never tapped.
+2. **A correction clears the record's review flag** and marks the method as a manual override, so
+   the row stops asking for a decision and starts showing *Overridden*.
+3. **The review history keeps every change, not just the last one.** The record itself only
+   remembers its most recent override; the audit trail is append-only and keeps them all, which
+   is why the history is built from the audit. A record that has been changed twice shows both
+   changes, each with its own reason and the teacher who made it.
+
+The history also stops a correction from rewriting the past. What a tap produced is worked out
+from *when the tap happened*, not read from the record's current status — so a student who
+arrived on time and was later marked late still shows `Tap accepted — PRESENT`, with the change
+listed beneath it under **Changes to this record**. Reading the current status instead would make
+the timeline claim the student had been late all along, which is the one thing a history must not
+do.
+
+---
+
 ## Captured states
 
 `screens/` holds a rendered PNG of every state, captured at 1440 × 900 in the light scheme.
@@ -256,6 +289,10 @@ exactly as every other control does, and add no dependency.
 | `14-review-override.png` | Screen 3, on Ryan Tan |
 | `15-class-summary.png` | Screen 4: **30 records — 24 present, 3 late, 2 absent, 1 review required** |
 | `16-dashboard-dark-scheme.png` | Screen 2 in the dark scheme |
+| `20-dashboard-status-dropdown.png` | Screen 2 · the register's status column as a drop-down |
+| `21-dashboard-override-dialog.png` | The reason a change needs before it is written |
+| `22-dashboard-after-correction.png` | The same register after the correction landed |
+| `23-review-history-after-override.png` | Screen 3 · the change in **Changes to this record**, with the original tap still reading PRESENT |
 | `17-special-events.png` | Screen 5, with one event in each state (captured in a 1100px-tall window, because the page is taller than 900) |
 | `18-events-approved-leave.png` | Screen 1 after scanning a student covered by a running event |
 | `19-events-cancel-dialog.png` | The confirmation dialog for cancelling an event |
@@ -289,6 +326,9 @@ the absentees.
 | Unresolved breaks at class end flagged for review | 4 | **Pending review** in the break panel |
 | Teachers can review suspicious records | 3 | The screen, and the **Waiting for review** list |
 | Manual Override | 3 | **Manual override** → **Save correction** / **Cancel** |
+| A teacher can correct a record without leaving the register | 2 | The **Status** column is a drop-down → **Change attendance status** |
+| A student with no tap cannot be corrected | 2 | That row's drop-down is disabled and reads *Not recorded* |
+| Every change is recorded in the review history | 3 | **Review history → Changes to this record**, with the reason and the teacher's name |
 | Attendance records permanently stored | 4 | **Save records** → *Attendance records saved successfully* |
 | System resets after class and is ready for the next class | 4 | **Reset for next class** → *System ready for the next class.* |
 | Approved student events and temporary lesson leave | 5 | The **Create Special Event** panel: students, date, start, end, reason, notes |

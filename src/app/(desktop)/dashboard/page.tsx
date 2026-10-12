@@ -10,6 +10,16 @@ import {
   Body1,
   Button,
   Caption1,
+  Dialog,
+  DialogActions,
+  DialogBody,
+  DialogContent,
+  DialogSurface,
+  DialogTitle,
+  Field,
+  MessageBar,
+  MessageBarBody,
+  MessageBarTitle,
   ProgressBar,
   Subtitle2,
   Table,
@@ -20,11 +30,20 @@ import {
   TableHeaderCell,
   TableRow,
   Text,
+  Textarea,
 } from '@/lib/fluent';
-import { ArrowClockwise20Regular, ShieldTask20Regular } from '@fluentui/react-icons';
+import { ArrowClockwise20Regular, Save20Regular, ShieldTask20Regular } from '@fluentui/react-icons';
 import { HeaderField, LiveIndicator, PageHeader } from '@/components/PageHeader';
 import { Metric } from '@/components/Metric';
-import { AttendanceBadge, BreakBadge, ReviewBadge, needsAttention, rowAccent } from '@/components/StatusBadge';
+import { AttendanceStatusDropdown } from '@/components/AttendanceStatusDropdown';
+import {
+  BreakBadge,
+  ReviewBadge,
+  needsAttention,
+  rowAccent,
+  statusLabel,
+} from '@/components/StatusBadge';
+import type { AttendanceStatus } from '@/lib/types';
 
 /**
  * SCREEN 2 — TEACHER ATTENDANCE DASHBOARD
@@ -32,12 +51,33 @@ import { AttendanceBadge, BreakBadge, ReviewBadge, needsAttention, rowAccent } f
  * The screen a teacher leaves open during the lesson. It answers three
  * questions and nothing else: which class is running, who is accounted for, and
  * which records need me.
+ *
+ * The register on this screen is not read-only. A teacher looking at the room
+ * is the person best placed to say a record is wrong, so the status column
+ * carries a drop-down. Changing it raises the change rather than committing it:
+ * the correction is not written until a reason has been given, because the
+ * engine refuses an override without one, and because that reason is what the
+ * review history shows beside the teacher's name.
  */
 
+/** A change the teacher has asked for but not yet justified. */
+interface PendingChange {
+  studentId: string;
+  name: string;
+  recordId: string;
+  from: AttendanceStatus | null;
+  to: AttendanceStatus;
+}
+
 export default function AttendanceDashboardPage() {
-  const { state, session, summary, roster } = useApp();
+  const { state, session, summary, roster, override } = useApp();
   const [refreshedAt, setRefreshedAt] = React.useState<string | null>(null);
   const [refreshing, setRefreshing] = React.useState(false);
+  const [pending, setPending] = React.useState<PendingChange | null>(null);
+  const [reason, setReason] = React.useState('');
+  const [reasonMissing, setReasonMissing] = React.useState(false);
+  /** What the last correction did, so the teacher sees it land. */
+  const [lastChange, setLastChange] = React.useState<string | null>(null);
 
   const expected = roster.length - summary.approvedLeave;
   const accounted = summary.totalRecords;
@@ -51,6 +91,27 @@ export default function AttendanceDashboardPage() {
       setRefreshedAt(formatTime(state.clock));
       setRefreshing(false);
     }, 320);
+  };
+
+  const closeChange = () => {
+    setPending(null);
+    setReason('');
+    setReasonMissing(false);
+  };
+
+  const saveChange = () => {
+    if (!pending) return;
+    if (reason.trim().length === 0) {
+      setReasonMissing(true);
+      return;
+    }
+    override(pending.recordId, pending.to, reason.trim());
+    setLastChange(
+      `${pending.name} (${pending.studentId}) changed from ${statusLabel(pending.from)} to ${
+        pending.to.charAt(0) + pending.to.slice(1).toLowerCase()
+      } — recorded in the review history.`,
+    );
+    closeChange();
   };
 
   return (
@@ -89,6 +150,15 @@ export default function AttendanceDashboardPage() {
       />
 
       <div className="ncas-body ncas-stack">
+        {lastChange ? (
+          <MessageBar intent="success">
+            <MessageBarBody>
+              <MessageBarTitle>Attendance corrected</MessageBarTitle>
+              {lastChange}
+            </MessageBarBody>
+          </MessageBar>
+        ) : null}
+
         {/* ---- class summary ------------------------------------------ */}
         <section aria-label="Class summary">
           <div className="ncas-metrics">
@@ -189,7 +259,23 @@ export default function AttendanceDashboardPage() {
                           Approved leave
                         </Badge>
                       ) : (
-                        <AttendanceBadge status={record?.status ?? null} />
+                        <AttendanceStatusDropdown
+                          status={record?.status ?? null}
+                          disabled={!record}
+                          disabledReason="No record yet — the student has not tapped at the reader."
+                          onChange={(next) => {
+                            if (!record) return;
+                            setPending({
+                              studentId: student.studentId,
+                              name: student.name,
+                              recordId: record.recordId,
+                              from: record.status,
+                              to: next,
+                            });
+                            setReason('');
+                            setReasonMissing(false);
+                          }}
+                        />
                       )}
                     </TableCell>
 
@@ -226,13 +312,89 @@ export default function AttendanceDashboardPage() {
 
           <div className="ncas-panel__body">
             <Body1 as="p" className="ncas-muted" style={{ margin: 0 }}>
-              A row marked with the orange accent is held for a teacher decision. Records are written
-              to permanent storage from the{' '}
-              <Link href="/summary">class summary</Link> once the lesson has ended.
+              A row marked with the orange accent is held for a teacher decision. The status column
+              is a drop-down: choose a different status and you will be asked for a reason before
+              the change is written, which is what puts it in the{' '}
+              <Link href="/review">review history</Link>. Records are written to permanent storage
+              from the <Link href="/summary">class summary</Link> once the lesson has ended.
             </Body1>
           </div>
         </section>
       </div>
+
+      {/* ---- one correction, justified before it is written ---------- */}
+      <Dialog
+        open={pending !== null}
+        onOpenChange={(_, data) => {
+          if (!data.open) closeChange();
+        }}
+      >
+        <DialogSurface>
+          <DialogBody>
+            <DialogTitle>Change attendance status</DialogTitle>
+            <DialogContent>
+              {pending ? (
+                <div className="ncas-stack" style={{ gap: 14 }}>
+                  <div className="ncas-row" style={{ gap: 28, flexWrap: 'wrap' }}>
+                    <HeaderField label="Student" value={`${pending.name} · ${pending.studentId}`} />
+                    <HeaderField label="Recorded as" value={statusLabel(pending.from)} />
+                    <HeaderField
+                      label="Change to"
+                      value={statusLabel(pending.to)}
+                    />
+                  </div>
+
+                  <MessageBar intent="warning">
+                    <MessageBarBody>
+                      The register is changed only when this is saved, and the reason below is kept
+                      in the review history beside your name. Until then nothing has moved.
+                    </MessageBarBody>
+                  </MessageBar>
+
+                  <Field
+                    label="Reason for the correction"
+                    required
+                    validationMessage={
+                      reasonMissing ? 'A reason is required for every change.' : undefined
+                    }
+                    validationState={reasonMissing ? 'error' : 'none'}
+                    hint="What a teacher looking at this record next week would need to know."
+                  >
+                    <Textarea
+                      value={reason}
+                      onChange={(_, data) => {
+                        setReason(data.value);
+                        if (data.value.trim().length > 0) setReasonMissing(false);
+                      }}
+                      placeholder="e.g. Student was in the room but the card did not read."
+                      resize="vertical"
+                      rows={2}
+                    />
+                  </Field>
+
+                  <Caption1 className="ncas-muted">
+                    Saving clears the review flag for this record, if it had one, and marks the
+                    method as a manual override.
+                  </Caption1>
+                </div>
+              ) : null}
+            </DialogContent>
+            <DialogActions>
+              <Button appearance="secondary" onClick={closeChange}>
+                Cancel
+              </Button>
+              <Button
+                appearance="primary"
+                icon={<Save20Regular />}
+                disabled={reason.trim().length === 0}
+                onClick={saveChange}
+              >
+                Save correction
+              </Button>
+            </DialogActions>
+          </DialogBody>
+        </DialogSurface>
+      </Dialog>
     </>
   );
 }

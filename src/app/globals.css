@@ -364,6 +364,26 @@ p.fui-Text {
 }
 
 /* ------------------------------------------------------------------
+   The attendance status drop-down
+   ------------------------------------------------------------------
+   A WinUI Drop-down carries roughly twenty characters of intrinsic
+   width. Inside a table cell that would set the width of the whole
+   status column and push the register wider than its panel, so the
+   control is given the width of its cell instead.
+   ------------------------------------------------------------------ */
+
+.ncas-status-dd.ncas-status-dd {
+  min-width: 0;
+  width: 100%;
+  max-width: 172px;
+}
+
+.ncas-status-dd .fui-Dropdown__button.fui-Dropdown__button {
+  min-width: 0;
+  width: 100%;
+}
+
+/* ------------------------------------------------------------------
    Special Events — the parts Fluent does not provide
    ------------------------------------------------------------------ */
 

@@ -3,7 +3,7 @@
 import React from 'react';
 
 import { Badge } from '@/lib/fluent';
-import type { AttendanceRecord, BreakStatus } from '@/lib/types';
+import type { AttendanceRecord, AttendanceStatus, BreakStatus } from '@/lib/types';
 
 /**
  * Status badges
@@ -13,6 +13,23 @@ import type { AttendanceRecord, BreakStatus } from '@/lib/types';
  * what both WinUI and the Fluent 2 typography rules use for a badge — the
  * colour carries the emphasis, not capital letters.
  */
+
+/**
+ * The three statuses a teacher can set by hand, in the order every screen lists
+ * them. The review screen's radio group and the dashboard's drop-down are both
+ * built from this one list, so the two can never offer different choices.
+ */
+export const STATUS_CHOICES: { value: AttendanceStatus; label: string }[] = [
+  { value: 'PRESENT', label: 'Present' },
+  { value: 'LATE', label: 'Late' },
+  { value: 'ABSENT', label: 'Absent' },
+];
+
+/** "Present", "Late", "Absent" — or "Not recorded" when the register has no row. */
+export function statusLabel(status: AttendanceStatus | null): string {
+  if (!status) return 'Not recorded';
+  return STATUS_CHOICES.find((choice) => choice.value === status)?.label ?? status;
+}
 
 export function AttendanceBadge({ status }: { status: AttendanceRecord['status'] | null }) {
   if (!status) {
