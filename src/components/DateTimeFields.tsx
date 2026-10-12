@@ -17,6 +17,8 @@ import {
   CalendarLtr20Regular,
   ChevronLeft20Regular,
   ChevronRight20Regular,
+  ChevronUp20Regular,
+  ChevronDown20Regular,
 } from '@fluentui/react-icons';
 
 /**
@@ -248,41 +250,177 @@ export function TimeField({
   onChange: (time: string) => void;
   hint?: string;
 }) {
-  const [text, setText] = React.useState(value);
+  const parsed = normaliseTime(value) ?? '08:00';
+  const [hoursText, minutesText] = parsed.split(':');
+  const hours = Number(hoursText);
+  const minutes = Number(minutesText);
 
-  React.useEffect(() => setText(value), [value]);
+  // Keep a short editable draft so the user can type naturally, e.g. "11" -> "15".
+  const [hourDraft, setHourDraft] = React.useState(hoursText);
+  const [minuteDraft, setMinuteDraft] = React.useState(minutesText);
+
+  React.useEffect(() => {
+    setHourDraft(hoursText);
+    setMinuteDraft(minutesText);
+  }, [hoursText, minutesText]);
+
+  const commit = (nextHours: number, nextMinutes: number) => {
+    let h = nextHours;
+    let m = nextMinutes;
+
+    if (m < 0) {
+      h -= 1;
+      m = 59;
+    } else if (m > 59) {
+      h += 1;
+      m = 0;
+    }
+
+    if (h < 0) h = 23;
+    if (h > 23) h = 0;
+
+    const next = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    onChange(next);
+    setHourDraft(String(h).padStart(2, '0'));
+    setMinuteDraft(String(m).padStart(2, '0'));
+  };
+
+  const commitHourDraft = () => {
+    const numeric = Number(hourDraft);
+    if (hourDraft !== '' && Number.isInteger(numeric) && numeric >= 0 && numeric <= 23) {
+      commit(numeric, minutes);
+    } else {
+      setHourDraft(hoursText);
+    }
+  };
+
+  const commitMinuteDraft = () => {
+    const numeric = Number(minuteDraft);
+    if (minuteDraft !== '' && Number.isInteger(numeric) && numeric >= 0 && numeric <= 59) {
+      commit(hours, numeric);
+    } else {
+      setMinuteDraft(minutesText);
+    }
+  };
+
+  const stepHours = (delta: number) => commit(hours + delta, minutes);
+  const stepMinutes = (delta: number) => commit(hours, minutes + delta);
+
+  const handleSegmentKeyDown = (
+    event: React.KeyboardEvent<HTMLInputElement>,
+    segment: 'hours' | 'minutes',
+  ) => {
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      segment === 'hours' ? stepHours(1) : stepMinutes(1);
+    } else if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      segment === 'hours' ? stepHours(-1) : stepMinutes(-1);
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      segment === 'hours' ? commitHourDraft() : commitMinuteDraft();
+      event.currentTarget.blur();
+    } else if (event.key === 'Tab') {
+      segment === 'hours' ? commitHourDraft() : commitMinuteDraft();
+    }
+  };
+
+  const handleHourChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const digits = event.target.value.replace(/\\D/g, '').slice(0, 2);
+    setHourDraft(digits);
+
+    if (digits.length === 2) {
+      const numeric = Number(digits);
+      if (numeric <= 23) {
+        commit(numeric, minutes);
+      }
+    }
+  };
+
+  const handleMinuteChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const digits = event.target.value.replace(/\\D/g, '').slice(0, 2);
+    setMinuteDraft(digits);
+
+    if (digits.length === 2) {
+      const numeric = Number(digits);
+      if (numeric <= 59) {
+        commit(hours, numeric);
+      }
+    }
+  };
 
   return (
     <Field label={label} hint={hint}>
-      <Combobox
-        freeform
-        value={text}
-        selectedOptions={value ? [value] : []}
-        placeholder="Select a time"
-        onOptionSelect={(_, data) => {
-          if (data.optionValue) {
-            setText(data.optionValue);
-            onChange(data.optionValue);
-          }
-        }}
-        onChange={(event) => {
-          const raw = event.target.value;
-          setText(raw);
-          const parsed = normaliseTime(raw);
-          // Only a time the school day contains is allowed through, so a typo
-          // cannot leave the form holding something the engine cannot compare.
-          if (parsed && TIMES.includes(parsed)) onChange(parsed);
-        }}
-      >
-        {TIMES.map((t) => (
-          <Option key={t} value={t}>
-            {t}
-          </Option>
-        ))}
-      </Combobox>
+      <div className="ncas-time-picker" role="group" aria-label={label}>
+        <div className="ncas-time-picker__segment">
+          <Button
+            appearance="subtle"
+            size="small"
+            icon={<ChevronUp20Regular />}
+            aria-label={`Increase ${label} hour`}
+            title="Increase hour"
+            onClick={() => stepHours(1)}
+          />
+          <input
+            type="text"
+            inputMode="numeric"
+            maxLength={2}
+            className="ncas-time-picker__value"
+            aria-label={`${label} hour`}
+            value={hourDraft}
+            onChange={handleHourChange}
+            onBlur={commitHourDraft}
+            onFocus={(event) => event.currentTarget.select()}
+            onKeyDown={(event) => handleSegmentKeyDown(event, 'hours')}
+          />
+          <Button
+            appearance="subtle"
+            size="small"
+            icon={<ChevronDown20Regular />}
+            aria-label={`Decrease ${label} hour`}
+            title="Decrease hour"
+            onClick={() => stepHours(-1)}
+          />
+        </div>
+
+        <span className="ncas-time-picker__colon" aria-hidden>
+          :
+        </span>
+
+        <div className="ncas-time-picker__segment">
+          <Button
+            appearance="subtle"
+            size="small"
+            icon={<ChevronUp20Regular />}
+            aria-label={`Increase ${label} minute`}
+            title="Increase minute"
+            onClick={() => stepMinutes(1)}
+          />
+          <input
+            type="text"
+            inputMode="numeric"
+            maxLength={2}
+            className="ncas-time-picker__value"
+            aria-label={`${label} minute`}
+            value={minuteDraft}
+            onChange={handleMinuteChange}
+            onBlur={commitMinuteDraft}
+            onFocus={(event) => event.currentTarget.select()}
+            onKeyDown={(event) => handleSegmentKeyDown(event, 'minutes')}
+          />
+          <Button
+            appearance="subtle"
+            size="small"
+            icon={<ChevronDown20Regular />}
+            aria-label={`Decrease ${label} minute`}
+            title="Decrease minute"
+            onClick={() => stepMinutes(-1)}
+          />
+        </div>
+      </div>
     </Field>
   );
 }
 
-/** The times the time field offers, for a caller that needs to dress a value. */
+/** The times the time field offers, for callers that need a list of school-day values. */
 export const TIME_OPTIONS = TIMES;
