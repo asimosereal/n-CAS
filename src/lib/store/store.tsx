@@ -43,6 +43,7 @@ import {
 import {
   applyManualOverride,
   createEntryRecord,
+  createManualRecord,
   finaliseClass,
   resolveScan,
   summariseClass,
@@ -92,6 +93,16 @@ type Action =
   | { type: 'CLEAR_TERMINAL' }
   | { type: 'FINALISE' }
   | { type: 'OVERRIDE'; recordId: string; newStatus: AttendanceRecord['status']; reason: string }
+  | {
+      /**
+       * A change addressed to the student rather than to a record, so it can be
+       * made whether or not the reader has produced one yet.
+       */
+      type: 'SET_STATUS';
+      studentId: string;
+      newStatus: AttendanceRecord['status'];
+      reason: string;
+    }
   | { type: 'CONFIRM_REVIEW'; recordId: string }
   | { type: 'SAVE' }
   | { type: 'RESET' }
@@ -125,6 +136,73 @@ let counters = { audit: 0, record: 0 };
 function nextAuditId(): string {
   counters.audit += 1;
   return `AUD-${String(counters.audit).padStart(4, '0')}`;
+}
+
+/**
+ * setAttendanceStatus()
+ * ------------------------------------------------------------------
+ * The one place a teacher's change is written, whatever the state of the
+ * register. Two callers reach it — the dashboard's drop-down, which knows the
+ * student, and the review screen, which knows the record — and they must not be
+ * able to disagree about what a change means.
+ *
+ * A row that exists is corrected: the engine keeps its arrival time and the
+ * before/after pair goes into the log. A student the reader has nothing for is
+ * given a record, marked as having no tap behind it, so that the next tap
+ * replaces it. Either way the reason is required by the engine, not by the
+ * screen, and either way the audit entry is written the same way.
+ */
+function setAttendanceStatus(
+  state: AppState,
+  studentId: string,
+  newStatus: AttendanceRecord['status'],
+  reason: string,
+): AppState {
+  const student = STUDENTS.find((s) => s.studentId === studentId);
+  if (!student) return state;
+
+  const existing = state.records.find(
+    (r) => r.studentId === studentId && r.classId === SESSION.classId,
+  );
+
+  const outcome = existing
+    ? applyManualOverride(existing, newStatus, reason)
+    : createManualRecord(student, SESSION, newStatus, reason);
+
+  if (!outcome.ok || !outcome.updated) {
+    return {
+      ...state,
+      message: { intent: 'error', text: outcome.error ?? 'The change was not saved.' },
+    };
+  }
+
+  const audit: AuditEntry = {
+    auditId: nextAuditId(),
+    timestamp: state.clock,
+    actor: SESSION.teacherName,
+    // Two actions, because they are two different facts: a record the reader
+    // produced and a teacher changed, and a record that exists only because a
+    // teacher said so. The review history reads the difference back.
+    action: existing ? 'MANUAL_OVERRIDE' : 'MANUAL_ENTRY',
+    recordId: outcome.updated.recordId,
+    oldValue: outcome.audit.oldValue,
+    newValue: outcome.audit.newValue,
+    reason: outcome.audit.reason,
+  };
+
+  return {
+    ...state,
+    records: existing
+      ? state.records.map((r) => (r.recordId === existing.recordId ? outcome.updated! : r))
+      : [...state.records, outcome.updated],
+    audit: [audit, ...state.audit],
+    message: {
+      intent: 'success',
+      text: existing
+        ? `Override saved — ${student.name} set to ${newStatus}`
+        : `Recorded by hand — ${student.name} set to ${newStatus}, no card read`,
+    },
+  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -212,15 +290,32 @@ function reducer(state: AppState, action: Action): AppState {
             decision.identityCheck,
           );
 
+          /*
+           * A record a teacher set by hand has no tap behind it, so this tap is
+           * the first reading of the lesson and legitimately replaces it. The
+           * log says what it replaced rather than claiming the register was
+           * empty — and because both rows share a record id, the teacher's own
+           * entry stays attached to the record that replaced it.
+           */
+          const replaced = state.records.find(
+            (r) =>
+              r.studentId === decision.student.studentId &&
+              r.classId === SESSION.classId &&
+              r.entryTime === null &&
+              r.verificationMethod === 'MANUAL_ENTRY',
+          );
+
           const audit: AuditEntry = {
             auditId: nextAuditId(),
             timestamp: state.clock,
             actor: `Terminal ${SESSION.room}`,
             action: 'ATTENDANCE_RECORDED',
             recordId: record.recordId,
-            oldValue: 'no record',
+            oldValue: replaced ? `${replaced.status} set by hand` : 'no record',
             newValue: decision.status,
-            reason: 'First valid RFID tap',
+            reason: replaced
+              ? 'First valid RFID tap — replaces the status a teacher set by hand'
+              : 'First valid RFID tap',
           };
 
           /* A failed identity check opens a review immediately. */
@@ -405,42 +500,18 @@ function reducer(state: AppState, action: Action): AppState {
     }
 
     /* ---------------------------------------------------------------- */
-    /* Manual override                                                  */
+    /* A teacher sets a status                                          */
     /* ---------------------------------------------------------------- */
+    /* The dashboard names the student; the review screen names the record.
+       Both end up in the same place, because the teacher is doing one thing
+       either way — saying what this student's register row should read. */
+    case 'SET_STATUS':
+      return setAttendanceStatus(state, action.studentId, action.newStatus, action.reason);
+
     case 'OVERRIDE': {
       const record = state.records.find((r) => r.recordId === action.recordId);
       if (!record) return state;
-
-      const outcome = applyManualOverride(record, action.newStatus, action.reason);
-      if (!outcome.ok || !outcome.updated) {
-        return {
-          ...state,
-          message: { intent: 'error', text: outcome.error ?? 'Override failed' },
-        };
-      }
-
-      const audit: AuditEntry = {
-        auditId: nextAuditId(),
-        timestamp: state.clock,
-        actor: SESSION.teacherName,
-        action: 'MANUAL_OVERRIDE',
-        recordId: record.recordId,
-        oldValue: outcome.audit.oldValue,
-        newValue: outcome.audit.newValue,
-        reason: outcome.audit.reason,
-      };
-
-      return {
-        ...state,
-        records: state.records.map((r) =>
-          r.recordId === record.recordId ? outcome.updated! : r,
-        ),
-        audit: [audit, ...state.audit],
-        message: {
-          intent: 'success',
-          text: `Override saved — ${record.studentId} set to ${action.newStatus}`,
-        },
-      };
+      return setAttendanceStatus(state, record.studentId, action.newStatus, action.reason);
     }
 
     /* Teacher accepts the record as it stands; the flag is cleared. */
@@ -616,6 +687,11 @@ interface Ctx {
   clearTerminal: () => void;
   finalise: () => void;
   override: (recordId: string, status: AttendanceRecord['status'], reason: string) => void;
+  /**
+   * Set a student's status, whether or not the reader has recorded one yet.
+   * Corrects the row if it exists and writes it if it does not.
+   */
+  setStatus: (studentId: string, status: AttendanceRecord['status'], reason: string) => void;
   confirmReview: (recordId: string) => void;
   save: () => void;
   reset: () => void;
@@ -702,6 +778,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     override: useCallback(
       (recordId: string, status: AttendanceRecord['status'], reason: string) =>
         dispatch({ type: 'OVERRIDE', recordId, newStatus: status, reason }),
+      [],
+    ),
+    setStatus: useCallback(
+      (studentId: string, status: AttendanceRecord['status'], reason: string) =>
+        dispatch({ type: 'SET_STATUS', studentId, newStatus: status, reason }),
       [],
     ),
     confirmReview: useCallback((recordId: string) => dispatch({ type: 'CONFIRM_REVIEW', recordId }), []),

@@ -110,7 +110,24 @@ export type BreakStatus = 'NONE' | 'ON_BREAK' | 'CLOSED' | 'UNRESOLVED';
  */
 export type IdentityCheck = 'MATCHED' | 'REVIEW_REQUIRED' | 'NOT_RUN';
 
-export type VerificationMethod = 'RFID' | 'RFID_FACE' | 'MANUAL_OVERRIDE';
+/**
+ * How the record came to exist, which is not the same question as what it says.
+ *
+ *   RFID_FACE        the card was read and the camera confirmed the student
+ *   RFID             the card was read, or the class-end rule wrote the row
+ *   MANUAL_ENTRY     no card was read — a teacher set this status by hand
+ *   MANUAL_OVERRIDE  the card was read, and a teacher then changed the result
+ *
+ * The last two are kept apart on purpose. A hand-set record has no tap behind
+ * it, so the next tap at the reader legitimately replaces it; a record that was
+ * read at the door does not. Collapsing them would make the register unable to
+ * say whether a mark was evidence or opinion.
+ */
+export type VerificationMethod =
+  | 'RFID'
+  | 'RFID_FACE'
+  | 'MANUAL_ENTRY'
+  | 'MANUAL_OVERRIDE';
 
 export interface AttendanceRecord {
   recordId: string;

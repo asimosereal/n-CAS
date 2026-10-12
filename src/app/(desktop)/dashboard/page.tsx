@@ -52,25 +52,29 @@ import type { AttendanceStatus } from '@/lib/types';
  * questions and nothing else: which class is running, who is accounted for, and
  * which records need me.
  *
- * The register on this screen is not read-only. A teacher looking at the room
- * is the person best placed to say a record is wrong, so the status column
- * carries a drop-down. Changing it raises the change rather than committing it:
- * the correction is not written until a reason has been given, because the
- * engine refuses an override without one, and because that reason is what the
- * review history shows beside the teacher's name.
+ * The register on this screen is not read-only, and it is not read-only only
+ * where the reader has already been. A teacher looking at the room is the person
+ * best placed to say a record is wrong — and equally the person who knows a
+ * student came in when the card did not read at all. So the status column
+ * carries a drop-down on every row, and choosing a different status raises the
+ * change rather than committing it: the correction is not written until a
+ * reason has been given, because the engine refuses a change without one, and
+ * because that reason is what the review history shows beside the teacher's
+ * name.
  */
 
 /** A change the teacher has asked for but not yet justified. */
 interface PendingChange {
   studentId: string;
   name: string;
-  recordId: string;
   from: AttendanceStatus | null;
   to: AttendanceStatus;
+  /** false when the reader has nothing for this student — the row is written by hand */
+  hadRecord: boolean;
 }
 
 export default function AttendanceDashboardPage() {
-  const { state, session, summary, roster, override } = useApp();
+  const { state, session, summary, roster, setStatus } = useApp();
   const [refreshedAt, setRefreshedAt] = React.useState<string | null>(null);
   const [refreshing, setRefreshing] = React.useState(false);
   const [pending, setPending] = React.useState<PendingChange | null>(null);
@@ -105,11 +109,15 @@ export default function AttendanceDashboardPage() {
       setReasonMissing(true);
       return;
     }
-    override(pending.recordId, pending.to, reason.trim());
+    setStatus(pending.studentId, pending.to, reason.trim());
     setLastChange(
-      `${pending.name} (${pending.studentId}) changed from ${statusLabel(pending.from)} to ${
-        pending.to.charAt(0) + pending.to.slice(1).toLowerCase()
-      } — recorded in the review history.`,
+      pending.hadRecord
+        ? `${pending.name} (${pending.studentId}) changed from ${statusLabel(
+            pending.from,
+          )} to ${statusLabel(pending.to)} — recorded in the review history.`
+        : `${pending.name} (${pending.studentId}) set to ${statusLabel(
+            pending.to,
+          )} by hand, with no card read — recorded in the review history.`,
     );
     closeChange();
   };
@@ -261,16 +269,13 @@ export default function AttendanceDashboardPage() {
                       ) : (
                         <AttendanceStatusDropdown
                           status={record?.status ?? null}
-                          disabled={!record}
-                          disabledReason="No record yet — the student has not tapped at the reader."
                           onChange={(next) => {
-                            if (!record) return;
                             setPending({
                               studentId: student.studentId,
                               name: student.name,
-                              recordId: record.recordId,
-                              from: record.status,
+                              from: record?.status ?? null,
                               to: next,
+                              hadRecord: Boolean(record),
                             });
                             setReason('');
                             setReasonMissing(false);
@@ -313,10 +318,13 @@ export default function AttendanceDashboardPage() {
           <div className="ncas-panel__body">
             <Body1 as="p" className="ncas-muted" style={{ margin: 0 }}>
               A row marked with the orange accent is held for a teacher decision. The status column
-              is a drop-down: choose a different status and you will be asked for a reason before
-              the change is written, which is what puts it in the{' '}
-              <Link href="/review">review history</Link>. Records are written to permanent storage
-              from the <Link href="/summary">class summary</Link> once the lesson has ended.
+              is a drop-down on every row: choose a different status and you will be asked for a
+              reason before the change is written, which is what puts it in the{' '}
+              <Link href="/review">review history</Link>. A student the reader has nothing for can
+              be set by hand as well — that row carries no arrival time, so a tap at the reader
+              later replaces it rather than being ignored as a duplicate. Records are written to
+              permanent storage from the <Link href="/summary">class summary</Link> once the lesson
+              has ended.
             </Body1>
           </div>
         </section>
@@ -344,12 +352,24 @@ export default function AttendanceDashboardPage() {
                     />
                   </div>
 
-                  <MessageBar intent="warning">
-                    <MessageBarBody>
-                      The register is changed only when this is saved, and the reason below is kept
-                      in the review history beside your name. Until then nothing has moved.
-                    </MessageBarBody>
-                  </MessageBar>
+                  {pending.hadRecord ? (
+                    <MessageBar intent="warning">
+                      <MessageBarBody>
+                        The register is changed only when this is saved, and the reason below is kept
+                        in the review history beside your name. Until then nothing has moved.
+                      </MessageBarBody>
+                    </MessageBar>
+                  ) : (
+                    <MessageBar intent="info">
+                      <MessageBarBody>
+                        <MessageBarTitle>Nothing recorded yet</MessageBarTitle>
+                        {pending.name} has no record for this lesson, so saving writes one by hand
+                        and marks it as having no card read behind it. If the card is tapped later
+                        the reader&apos;s own reading takes its place — the reason below stays in the
+                        review history either way.
+                      </MessageBarBody>
+                    </MessageBar>
+                  )}
 
                   <Field
                     label="Reason for the correction"
@@ -373,8 +393,9 @@ export default function AttendanceDashboardPage() {
                   </Field>
 
                   <Caption1 className="ncas-muted">
-                    Saving clears the review flag for this record, if it had one, and marks the
-                    method as a manual override.
+                    {pending.hadRecord
+                      ? 'Saving clears the review flag for this record, if it had one, and marks the method as a manual override.'
+                      : 'Saving writes the record with no arrival time and marks the method as a manual entry, so a later tap is not mistaken for a duplicate.'}
                   </Caption1>
                 </div>
               ) : null}

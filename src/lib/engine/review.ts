@@ -73,10 +73,21 @@ export function describeRecordHistory(
       detail: `Card ${student.rfidCardId} matched ${student.name} in the RFID register`,
     });
   } else {
+    /*
+     * No tap. Two different things can look like this: the class-end rule
+     * writing an automatic ABSENT for someone who never turned up, and a
+     * teacher setting the status by hand for someone the reader missed. The
+     * first is stamped with the end of the lesson, because that is when the
+     * rule fired; the second has no clock time of its own and says so, because
+     * claiming the end of the lesson for it would invent an event.
+     */
+    const handwritten = record.verificationMethod !== 'RFID';
     events.push({
-      time: session.endTime,
+      time: handwritten ? null : session.endTime,
       label: 'No tap recorded',
-      detail: 'No valid RFID tap was received before the lesson ended',
+      detail: handwritten
+        ? 'The student never tapped at the reader; the status on this record was set by a teacher'
+        : 'No valid RFID tap was received before the lesson ended',
     });
   }
 
@@ -118,8 +129,14 @@ export function describeRecordHistory(
 
   /* A teacher's change is a change, not a tap, so it is listed under the
      record's changes rather than here whenever the audit trail has it. The
-     fallback keeps a restored register honest. */
-  if (record.overrideReason && !hasAudit('MANUAL_OVERRIDE')) {
+     fallback keeps a restored register honest — and it has to look for both
+     actions, because a record a teacher wrote by hand is logged as MANUAL_ENTRY
+     and would otherwise have its reason printed twice. */
+  if (
+    record.overrideReason &&
+    !hasAudit('MANUAL_OVERRIDE') &&
+    !hasAudit('MANUAL_ENTRY')
+  ) {
     events.push({
       time: null,
       label: 'Manual override applied',

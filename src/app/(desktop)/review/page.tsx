@@ -66,11 +66,34 @@ function initials(name: string): string {
  * constant for the log; this is what the log reads like on screen.
  */
 const AUDIT_LABEL: Record<string, string> = {
+  ATTENDANCE_RECORDED: 'Recorded at the reader',
+  REVIEW_FLAGGED: 'Held for review',
   MANUAL_OVERRIDE: 'Status changed by a teacher',
+  MANUAL_ENTRY: 'Status set by hand — no card was read',
   REVIEW_CONFIRMED: 'Record confirmed by a teacher',
   EVENT_CREATED: 'Approved event created',
   EVENT_UPDATED: 'Approved event changed',
   EVENT_CANCELLED: 'Approved event cancelled',
+};
+
+/**
+ * The actions a teacher is the author of. A record whose log carries one of
+ * these has been settled by a person, whatever its review flag now says — which
+ * is what decides whether it stays reachable on this screen.
+ */
+const TEACHER_ACTIONS = new Set(['MANUAL_OVERRIDE', 'MANUAL_ENTRY', 'REVIEW_CONFIRMED']);
+
+/**
+ * How the record came to exist, in the same words. The stored value is an enum;
+ * this is what it should read like to a teacher. The distinction that matters is
+ * whether a card was read: a hand-set row is a teacher's judgement, and the next
+ * tap at the reader will replace it.
+ */
+const METHOD_LABEL: Record<string, string> = {
+  RFID: 'Card read at the reader',
+  RFID_FACE: 'Card read, image confirmed',
+  MANUAL_ENTRY: 'Set by a teacher — no card read',
+  MANUAL_OVERRIDE: 'Status changed by a teacher',
 };
 
 export default function ReviewPage() {
@@ -82,20 +105,30 @@ export default function ReviewPage() {
   );
 
   /**
-   * Records a teacher has already changed — on this screen, or from the status
+   * Records a teacher has already settled — on this screen, or from the status
    * drop-down on the dashboard. They no longer need a decision, but they have to
-   * stay reachable: correcting a record clears its review flag, so without this
-   * list the only route to the change that was just made would disappear along
+   * stay reachable: settling a record clears its review flag, so without this
+   * list the only route to a change that was just made would disappear along
    * with the flag.
+   *
+   * It is read from the audit trail rather than from the review flag, and that
+   * matters for two cases the flag alone gets wrong. Confirming a record sets
+   * the flag to CONFIRMED, which used to drop it out of every list. And a record
+   * a teacher set by hand is replaced outright if the card is tapped later — the
+   * new record has no flag at all, but the teacher's mark and the reason for it
+   * are still in the log, so the row stays here and the whole story can be read
+   * back.
    */
-  const changed = React.useMemo(
-    () => roster.filter((row) => row.record?.reviewStatus === 'OVERRIDDEN'),
-    [roster],
-  );
+  const settled = React.useMemo(() => {
+    const touched = new Set(
+      state.audit.filter((entry) => TEACHER_ACTIONS.has(entry.action)).map((e) => e.recordId),
+    );
+    return roster.filter((row) => row.record && touched.has(row.record.recordId));
+  }, [roster, state.audit]);
 
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const activeId =
-    selectedId ?? flagged[0]?.student.studentId ?? changed[0]?.student.studentId ?? null;
+    selectedId ?? flagged[0]?.student.studentId ?? settled[0]?.student.studentId ?? null;
   const active = roster.find((row) => row.student.studentId === activeId) ?? null;
 
   /* The draft a teacher is composing. Nothing reaches the register until the
@@ -262,7 +295,10 @@ export default function ReviewPage() {
                           />
                         </span>
                       </div>
-                      <HeaderField label="Recorded by" value={record.verificationMethod} />
+                      <HeaderField
+                        label="Recorded by"
+                        value={METHOD_LABEL[record.verificationMethod] ?? record.verificationMethod}
+                      />
                     </div>
 
                     {record.reviewReason ? (
@@ -456,16 +492,16 @@ export default function ReviewPage() {
                   ))
                 )}
 
-                {changed.length > 0 ? (
+                {settled.length > 0 ? (
                   <>
                     <Divider style={{ margin: '4px 0' }} />
                     <div className="ncas-row ncas-row--between">
-                      <Caption1 className="ncas-muted">Changed by a teacher</Caption1>
+                      <Caption1 className="ncas-muted">Settled by a teacher</Caption1>
                       <Badge appearance="tint" color="informative">
-                        {changed.length}
+                        {settled.length}
                       </Badge>
                     </div>
-                    {changed.map((row) => (
+                    {settled.map((row) => (
                       <Button
                         key={row.student.studentId}
                         appearance={row.student.studentId === activeId ? 'primary' : 'subtle'}

@@ -78,7 +78,16 @@ export function ReviewBadge({ record }: { record: AttendanceRecord | null }) {
       </Badge>
     );
   }
-  return (
+  /*
+   * A record a teacher wrote by hand is settled for a different reason from one
+   * the reader produced and a teacher then corrected, and the register should
+   * say which: the first has no card read behind it, the second has one.
+   */
+  return record.verificationMethod === 'MANUAL_ENTRY' ? (
+    <Badge appearance="tint" color="informative">
+      Set by teacher
+    </Badge>
+  ) : (
     <Badge appearance="tint" color="informative">
       Overridden
     </Badge>

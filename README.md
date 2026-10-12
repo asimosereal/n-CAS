@@ -237,26 +237,37 @@ exactly as every other control does, and add no dependency.
 ## Correcting a record from the register
 
 A teacher looking at the room is the person best placed to say a record is wrong, so the
-dashboard's **Status** column is a WinUI drop-down rather than a badge. It does not write
-anything on its own: choosing a different status raises **Change attendance status**, which
-shows what the record says now, what it will say, and asks for a reason. Only *Save correction*
-writes.
+dashboard's **Status** column is a WinUI drop-down rather than a badge, and it is live on **every**
+row — including the ones the reader has nothing for. It does not write anything on its own:
+choosing a different status raises **Change attendance status**, which shows what the record says
+now, what it will say, and asks for a reason. Only *Save correction* writes.
 
 The reason is not optional, and that is the engine's rule rather than the screen's —
-`applyManualOverride()` rejects an override with an empty reason. What that buys is a review
-history that can be read back weeks later and still make sense.
+`applyManualOverride()` and `createManualRecord()` both reject a change with an empty reason. What
+that buys is a review history that can be read back weeks later and still make sense.
 
-Three consequences worth knowing:
+Four consequences worth knowing:
 
-1. **A row with no record cannot be corrected.** Its drop-down reads *Not recorded* and is
-   disabled. A manual override corrects a record; it does not invent one, and silently creating a
-   row would hide the fact that the student never tapped.
-2. **A correction clears the record's review flag** and marks the method as a manual override, so
-   the row stops asking for a decision and starts showing *Overridden*.
-3. **The review history keeps every change, not just the last one.** The record itself only
+1. **A student the reader has nothing for can be set by hand.** The drop-down reads *Not recorded*
+   and offers the same three statuses. Saving writes the row (`createManualRecord()`), which is
+   what lets a teacher settle the case the terminal cannot: a card left at home, a card that would
+   not read, a student who came in past the reader.
+2. **A hand-set row carries no arrival time**, and that is deliberate rather than cosmetic. With no
+   tap there are no late minutes to show, and — more usefully — `resolveScan()` reads a record with
+   no entry time as *"this student has not been recorded yet"*, so a tap at the reader **later
+   replaces the teacher's mark** instead of being ignored as a duplicate. The device is evidence and
+   a teacher's mark is a judgement; the register should not let the two pass for each other. The
+   dialog says so before anything is saved, and the two methods are kept apart in the data as
+   `MANUAL_ENTRY` and `MANUAL_OVERRIDE`.
+3. **A settled row keeps asking nothing but stays readable.** Confirming a review, or correcting a
+   row, clears its review flag — so the review screen lists settled records under **Settled by a
+   teacher**, read from the audit trail rather than from the flag. That is what keeps a teacher's
+   reason reachable even after the reader has replaced the row it was written for.
+4. **The review history keeps every change, not just the last one.** The record itself only
    remembers its most recent override; the audit trail is append-only and keeps them all, which
    is why the history is built from the audit. A record that has been changed twice shows both
-   changes, each with its own reason and the teacher who made it.
+   changes, each with its own reason and the teacher who made it — and if a hand-set row was
+   replaced by a real tap, all three steps read in order.
 
 The history also stops a correction from rewriting the past. What a tap produced is worked out
 from *when the tap happened*, not read from the record's current status — so a student who
@@ -289,10 +300,15 @@ do.
 | `14-review-override.png` | Screen 3, on Ryan Tan |
 | `15-class-summary.png` | Screen 4: **30 records — 24 present, 3 late, 2 absent, 1 review required** |
 | `16-dashboard-dark-scheme.png` | Screen 2 in the dark scheme |
-| `20-dashboard-status-dropdown.png` | Screen 2 · the register's status column as a drop-down |
+| `20-dashboard-status-dropdown.png` | Screen 2 · the register's status column as a drop-down, live on every row |
 | `21-dashboard-override-dialog.png` | The reason a change needs before it is written |
 | `22-dashboard-after-correction.png` | The same register after the correction landed |
 | `23-review-history-after-override.png` | Screen 3 · the change in **Changes to this record**, with the original tap still reading PRESENT |
+| `24-dashboard-set-status-by-hand.png` | Setting a status on a student the reader has nothing for — *Nothing recorded yet* |
+| `25-dashboard-after-hand-entry.png` | The register afterwards: Present / Late / Absent set by hand, each with no arrival time |
+| `26-review-history-hand-entry.png` | Screen 3 · a hand-set row: *No tap recorded*, method *Set by a teacher — no card read* |
+| `27-reader-replaces-hand-set.png` | The card tapped at the reader afterwards — the device reading takes the record over |
+| `28-review-history-after-device-tap.png` | Screen 3 · all three steps in order: the tap, the teacher's mark, and the tap that replaced it |
 | `17-special-events.png` | Screen 5, with one event in each state (captured in a 1100px-tall window, because the page is taller than 900) |
 | `18-events-approved-leave.png` | Screen 1 after scanning a student covered by a running event |
 | `19-events-cancel-dialog.png` | The confirmation dialog for cancelling an event |
@@ -326,8 +342,9 @@ the absentees.
 | Unresolved breaks at class end flagged for review | 4 | **Pending review** in the break panel |
 | Teachers can review suspicious records | 3 | The screen, and the **Waiting for review** list |
 | Manual Override | 3 | **Manual override** → **Save correction** / **Cancel** |
-| A teacher can correct a record without leaving the register | 2 | The **Status** column is a drop-down → **Change attendance status** |
-| A student with no tap cannot be corrected | 2 | That row's drop-down is disabled and reads *Not recorded* |
+| A teacher can correct a record without leaving the register | 2 | The **Status** column is a drop-down on every row → **Change attendance status** |
+| A teacher can set a status even when nothing has been recorded | 2 | A row reading *Not recorded* opens the same drop-down and writes the record by hand |
+| A real tap replaces a status that was set by hand | 1, 3 | Push the card at the reader after a hand-set mark; **Review history** shows both, in order |
 | Every change is recorded in the review history | 3 | **Review history → Changes to this record**, with the reason and the teacher's name |
 | Attendance records permanently stored | 4 | **Save records** → *Attendance records saved successfully* |
 | System resets after class and is ready for the next class | 4 | **Reset for next class** → *System ready for the next class.* |
@@ -352,6 +369,7 @@ src/lib/engine/attendance-engine.ts
   resolveScan()                  step 5  decide what this tap means
   finaliseClass()                step 6  close the lesson
   applyManualOverride()          step 7  let a teacher change a record
+  createManualRecord()           step 7  …or write one the reader never produced
   summariseClass()               step 8  count the class up
 
 src/lib/engine/events-engine.ts

@@ -13,6 +13,7 @@
  *   5. decide what the tap means                  resolveScan()
  *   6. close the class                            finaliseClass()
  *   7. let a teacher change a record             applyManualOverride()
+ *      (or write one where the reader has none)  createManualRecord()
  *   8. count the class up                         summariseClass()
  */
 
@@ -431,6 +432,72 @@ export function applyManualOverride(
       verificationMethod: 'MANUAL_OVERRIDE',
       // A teacher has now looked at it, so it is no longer pending.
       identityCheck: record.identityCheck === 'REVIEW_REQUIRED' ? 'MATCHED' : record.identityCheck,
+    },
+    audit: auditBase,
+  };
+}
+
+/**
+ * createManualRecord()
+ * ------------------------------------------------------------------
+ * Requirement: "Teachers can change a student's attendance regardless of
+ * whether the reader has recorded one." A teacher looking at the room may know
+ * a student was present when the terminal has nothing at all — a card left at
+ * home, a card that would not read, a student who came in past the reader.
+ * Leaving that row untouchable let a teacher see a wrong register and not
+ * correct it.
+ *
+ * The record this writes is deliberately marked as having no tap behind it:
+ * `entryTime` is null and the method is MANUAL_ENTRY. That matters, because
+ * `resolveScan` reads a record with no entry time as "this student has not been
+ * recorded yet" — so if the card is tapped later, the reader's own reading
+ * replaces this one. The device is evidence and a teacher's mark is a
+ * judgement; the register should not let the two pass for each other.
+ *
+ * Nothing is lost when that happens. The record id is the one a tap would have
+ * produced, so the audit entry for this mark stays attached to the record that
+ * replaced it, and the review history reads it back with the reason beside the
+ * teacher's name.
+ */
+export function createManualRecord(
+  student: Student,
+  session: ClassSession,
+  newStatus: AttendanceStatus,
+  reason: string | null,
+): OverrideOutcome {
+  const recordId = `${session.classId}:${student.studentId}`;
+  const auditBase = {
+    recordId,
+    oldValue: 'not recorded',
+    newValue: newStatus,
+    reason: reason ?? '',
+  };
+
+  if (!reason || reason.trim().length === 0) {
+    return { ok: false, error: 'A reason is required for every override.', audit: auditBase };
+  }
+
+  return {
+    ok: true,
+    updated: {
+      recordId,
+      studentId: student.studentId,
+      classId: session.classId,
+      entryTime: null,
+      status: newStatus,
+      // With no tap there is no arrival to measure, so there are no late minutes.
+      lateMinutes: 0,
+      verificationMethod: 'MANUAL_ENTRY',
+      identityCheck: 'NOT_RUN',
+      // Settled: the class-end rule must not turn a teacher's PRESENT into an
+      // absent, and there is no captured image here for anyone to review.
+      reviewStatus: 'OVERRIDDEN',
+      reviewReason: null,
+      breakStatus: 'NONE',
+      breakStartedAt: null,
+      breakTotalMinutes: 0,
+      overrideReason: reason.trim(),
+      saved: false,
     },
     audit: auditBase,
   };
