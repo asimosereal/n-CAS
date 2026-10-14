@@ -121,11 +121,11 @@ ${reducedMotion([
   color: rgba(0, 0, 0, 0.266667);
 }
 
-@media (prefers-color-scheme: dark) {
+/* The dark scheme is reached through the attribute the whole layer now switches
+   on, not the media query — see the note at the top of ../tokens.ts. */
+:root[data-ncas-scheme='dark'] .fui-ListItem.fui-ListItem[aria-disabled='true'] {
   /* 30% of --winui-text-fill-primary (#ffffff). */
-  .fui-ListItem.fui-ListItem[aria-disabled='true'] {
-    color: rgba(255, 255, 255, 0.301961);
-  }
+  color: rgba(255, 255, 255, 0.301961);
 }
 
 .fui-ListItem.fui-ListItem[aria-disabled='true']::before {

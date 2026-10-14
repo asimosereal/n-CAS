@@ -125,6 +125,61 @@ used for an unrecorded row, and the two stop being different colours. Each value
 `globals.css` was chosen by measuring the composite, and every one keeps the row's text above
 5.5:1 contrast.
 
+### Light and dark
+
+The **Appearance** control sits at the bottom of the navigation rail, above the room line: two
+segments, Light and Dark, with the chosen one on the accent fill. Until a teacher picks one the
+operating system's preference is what is shown, which is WinUI's
+`RequestedTheme="Default"` — and that is why there is no third "system" segment, because it is
+the starting state rather than a place to sit. A choice is remembered, and from then on it stands
+even if the operating system changes underneath it.
+
+Making that possible meant undoing a decision the WinUI layer had taken for a good reason. Its
+`--winui-*` dictionaries were written as `@media (prefers-color-scheme: dark)`, which is the one
+thing a JavaScript switch cannot reach: the query describes the operating system, not the
+application. So every dark block in `src/winui/tokens.ts` and `src/winui/controls/list.css.ts`
+is now written against `:root[data-ncas-scheme='dark']` instead, and `src/lib/scheme.ts` owns
+that attribute — written by a one-line script in `<head>` before the first paint, changed from
+the rail thereafter. The Fluent theme is chosen from the same value in `providers.tsx`, so the
+two cannot disagree; nothing reads `prefers-color-scheme` any more except the boot script, which
+uses it only to decide the *starting* scheme.
+
+### Readability, measured
+
+Both schemes were audited rather than eyeballed. `audit.js` walks every element that renders its
+own text, works out the colour it is actually painted in and the colour it is actually painted
+on — hit-testing the element's centre, because an absolutely-positioned label hanging outside
+its parent's box is painted over the page and not over the parent — and reports the WCAG 2.1
+ratio. Every route, in both schemes, is now above the floor: 4.5:1 for body text, 3:1 for large.
+
+Four things were wrong, and all four were the same shape — a colour that was right in one scheme
+and wrong in the other, or right for text and wrong for a surface:
+
+1. **The two neutral badge appearances.** Fluent builds them out of the neutral
+   foreground/background pair, and the WinUI palette carries that pair as *translucent* fills.
+   `tint-important` therefore had 44%-black as its surface behind white text, so its contrast
+   was whatever the row behind it happened to be — 3.8:1 and 4.0:1 on the register. The token is
+   re-pointed to the primary text fill, which is the strongest neutral in either scheme.
+2. **Inline links.** Fluent's `Text` presets do not reach into a nested `<a>`, so the browser's
+   own `#0000EE` was in use. That passes on white at 8:1 and is **1.5:1** on the dark surface.
+   Links now take WinUI's hyperlink foreground, `--winui-accent-text-fill-primary`.
+3. **The student card's details.** White on the card's printed band measured 2.7:1 for the parent
+   account number, 3.5:1 for the student number and 3.9:1 for the name — the three things on the
+   card a student has to read. The details now sit in a knockout panel, which is how a card is
+   actually printed: 12.8:1, 13.3:1 and 8.4:1.
+4. **The card's two smallest labels.** The city at 4.1:1 and the STUDENT label at 3.3:1, both
+   darkened to the nearest step that clears 4.5:1 rather than enlarged, because a card's type is
+   what it is.
+
+The audit cannot measure anything painted over a gradient — the colour depends on where in the
+box the pixel is — so those are measured a second way, by screenshotting the region and reading
+the pixels. That is how the card's band and the reader's bezel are checked, and it is what found
+the card's details. The bezel's engraving is left as it is: 9px at 30% white is what etched
+plastic looks like, and it is not content anyone has to read. The device's own display — the
+text that matters — measures 10.1:1.
+
+Disabled controls are excluded, as the standard exempts them.
+
 ---
 
 ## Screen 1 — the reader station
@@ -344,6 +399,8 @@ do.
 | `29-dashboard-row-tints.png` | Screen 2 with every row tinted by status: green, amber, red, grey |
 | `30-dashboard-row-tints-dark.png` | The same register in the dark scheme |
 | `31-reader-station-logo.png` | Screen 1 with the product mark in the station header |
+| `34-station-card-readable.png` | Screen 1 with the card's details in their knockout panel |
+| `35-dashboard-dark.png` | Screen 2 in the dark scheme, with the **Appearance** switch in the rail |
 
 The last three figures are the specification's own worked example, and the set reaches them by
 scanning the class in at the reader rather than by pre-loading it: thirteen cards are pushed at

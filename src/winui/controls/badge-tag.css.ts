@@ -15,6 +15,34 @@
 // https://github.com/microsoft/fluentui/blob/6dee27b023a2d989f032b4adacb2135d336a67fb/packages/react-components/react-tags/library/src/components/InteractionTagPrimary/useInteractionTagPrimaryStyles.styles.ts#L57-L71
 // https://github.com/microsoft/fluentui/blob/6dee27b023a2d989f032b4adacb2135d336a67fb/packages/react-components/react-tags/library/src/components/InteractionTagPrimary/useInteractionTagPrimaryStyles.styles.ts#L194-L198
 export const badgeTagCss = `
+/* The two neutral appearances have to be restated, and for a reason worth
+   writing down: Fluent builds them out of the neutral foreground/background
+   pair, and the WinUI palette carries that pair as *translucent* fills — right
+   for text, wrong for a chip's surface.
+
+   \`tint-important\` puts colorNeutralForeground3 behind white text. In the WinUI
+   palette that token is the tertiary text fill, rgba(0, 0, 0, 0.447), so the
+   chip's surface is 44% black composited over whatever the row behind it
+   happens to be — and its contrast is therefore whatever the row's is. On the
+   dashboard's register that measured 3.8:1 and 4.0:1 for "Approved leave" and
+   "Review required", at 12px, where 4.5:1 is the floor.
+   \`tint-informative\` uses the same token the other way round, as the *text* on
+   a light fill, so "04 min" came out at 3.2:1 — a 44%-black label, which reads
+   as disabled.
+
+   Re-pointing the token to the primary text fill fixes both at once, because
+   that token is the strongest neutral in either scheme and is opaque in dark.
+   "Important" stays the loud chip and "informative" the quiet one, and both
+   keep their label above 14:1 in light and 10:1 in dark.
+
+   The three status appearances are deliberately left alone. Fluent's palette
+   colours are opaque and measured 16:1 on the register; WinUI's own system
+   fills would land nearer 4.8:1, which is a worse result bought with a closer
+   transcription — not a trade worth making at 12px. */
+.fui-Badge.fui-Badge {
+  --colorNeutralForeground3: var(--winui-text-fill-primary);
+}
+
 /* The InfoBadge style sets a FontSize on its value TextBlock and no FontWeight,
    so the badge reads at the text weight around it rather than Fluent's semibold.
    InfoBadge's geometry is deliberately not transcribed: its bounds (MinWidth 4,

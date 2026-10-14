@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
+import Script from 'next/script';
 
 import './globals.css';
 import { winuiCss } from '@/winui';
+import { schemeBootScript } from '@/lib/scheme';
 import { Providers } from './providers';
 
 export const metadata: Metadata = {
@@ -15,7 +17,19 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    // The boot script writes data-ncas-scheme onto <html> before the first
+    // paint, which React did not put there; the warning this suppresses is
+    // about that one attribute and nothing else.
+    <html lang="en" suppressHydrationWarning>
+      {/*
+        The scheme is decided here rather than in React because the WinUI token
+        dictionaries read it as a selector, and a selector can only be in place
+        before the stylesheet is applied. Deciding it in an effect instead would
+        show a white flash on every navigation for anyone who has chosen dark.
+      */}
+      <Script id="ncas-scheme" strategy="beforeInteractive">
+        {schemeBootScript}
+      </Script>
       <body>
         {/*
           The WinUI layer. `winuiCss` is the 30 stylesheets under src/winui

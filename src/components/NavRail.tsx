@@ -13,6 +13,7 @@ import {
   ShieldTask20Regular,
 } from '@fluentui/react-icons';
 import { SESSION } from '@/lib/data/seed';
+import { SchemeSwitch } from './SchemeSwitch';
 
 /**
  * NavRail
@@ -74,6 +75,10 @@ export function NavRail() {
       ))}
 
       <div className="ncas-nav__spacer" />
+
+      {/* The scheme switch sits directly above the room line, so both are in the
+          corner the teacher's eye is already in when they look for settings. */}
+      <SchemeSwitch />
 
       <div className="ncas-brand" style={{ paddingBottom: 0 }}>
         <Caption1 className="ncas-muted">

@@ -155,6 +155,43 @@ p.fui-Text {
 }
 
 /* ------------------------------------------------------------------
+   Scheme switch — the lower-left corner of the rail
+   ------------------------------------------------------------------
+   A two-segment choice rather than a check box, because "light or dark" is a
+   choice between two things and a check box only offers one. It is the WinUI
+   pattern for a small exclusive set: the selected segment carries the accent
+   fill, the other is subtle, and both stay the size of a nav item so the
+   control does not become a second kind of thing in the rail.
+
+   The label sits above rather than beside, so the two segments get the rail's
+   full width instead of being squeezed into what is left of it. */
+.ncas-scheme {
+  display: grid;
+  gap: 6px;
+  padding: 10px 8px 4px;
+  border-top: 1px solid var(--winui-divider-stroke-default);
+}
+
+.ncas-scheme__label {
+  padding: 0 2px;
+  font-size: 12px;
+  color: var(--winui-text-fill-secondary);
+}
+
+.ncas-scheme__options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+/* Each segment is a Fluent button, so it keeps the WinUI layer's own height,
+   radius and focus ring. Only the justification is stated, because a button's
+   flex layout is Fluent's and the rail's items are laid out the same way. */
+.ncas-scheme__options .fui-Button {
+  justify-content: flex-start;
+}
+
+/* ------------------------------------------------------------------
    Main column
    ------------------------------------------------------------------ */
 
@@ -486,6 +523,32 @@ p.fui-Text {
   box-shadow: inset 0 0 0 1px var(--winui-accent-fill-default);
 }
 
+/* A real link, as opposed to a table cell that behaves like one (below). Fluent's
+   Text presets do not reach into a nested <a>, so without this rule the
+   browser's own #0000EE is used — and that is the trap: it passes on the light
+   surface at 8:1 and is 1.5:1 on the dark one, which made every inline link in
+   the application unreadable in the dark scheme. WinUI's hyperlink foreground is
+   the accent text fill, which the token dictionaries state for both schemes:
+   #003e92 on light and #99ebff on dark, 9.8:1 and 12.1:1 against their own
+   surfaces. The hover step is the accent ramp's second value.
+
+   Every link that carries its own colour — the rail's items, the buttons Fluent
+   renders as anchors — declares it at a class, which outranks this element
+   selector, so none of them move. */
+a {
+  color: var(--winui-accent-text-fill-primary);
+}
+
+a:hover {
+  color: var(--winui-accent-text-fill-secondary);
+}
+
+a:focus-visible {
+  outline: 2px solid var(--winui-accent-fill-default);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
 /* a table cell that acts as a link into the details panel */
 .ncas-linkish {
   border: 0;
@@ -565,41 +628,41 @@ p.fui-Text {
   background-color: rgba(120, 132, 146, 0.21);
 }
 
-@media (prefers-color-scheme: dark) {
-  /* The same four meanings on a dark surface. A dark surface needs more of the
-     hue in the mix than a light one does, not less: at the strength that reads
-     as a pale green on white, the same colour composited onto #202020 lands
-     within a few points of the neutral grey used for an unrecorded row — the
-     two stop being different colours. These values were measured, not guessed:
-     each composites to a colour at least 30 points of green away from the grey
-     row beside it, and every one keeps the row's white text above 5.5:1. */
-  .ncas-table-wrap .fui-TableRow.ncas-row--present {
-    background-color: rgba(108, 203, 146, 0.3);
-  }
-  .ncas-table-wrap .fui-TableRow.ncas-row--late {
-    background-color: rgba(255, 199, 89, 0.26);
-  }
-  .ncas-table-wrap .fui-TableRow.ncas-row--absent {
-    background-color: rgba(255, 138, 138, 0.24);
-  }
-  .ncas-table-wrap .fui-TableRow.ncas-row--none,
-  .ncas-table-wrap .fui-TableRow.ncas-row--leave {
-    background-color: rgba(255, 255, 255, 0.055);
-  }
+/* The same four meanings on a dark surface, reached through the scheme attribute
+   the rest of the application switches on rather than the media query — see
+   src/lib/scheme.ts. A dark surface needs more of the hue in the mix than a
+   light one does, not less: at the strength that reads as a pale green on white,
+   the same colour composited onto #202020 lands within a few points of the
+   neutral grey used for an unrecorded row — the two stop being different
+   colours. These values were measured, not guessed: each composites to a colour
+   at least 30 points of green away from the grey row beside it, and every one
+   keeps the row's white text above 5.5:1. */
+:root[data-ncas-scheme='dark'] .ncas-table-wrap .fui-TableRow.ncas-row--present {
+  background-color: rgba(108, 203, 146, 0.3);
+}
+:root[data-ncas-scheme='dark'] .ncas-table-wrap .fui-TableRow.ncas-row--late {
+  background-color: rgba(255, 199, 89, 0.26);
+}
+:root[data-ncas-scheme='dark'] .ncas-table-wrap .fui-TableRow.ncas-row--absent {
+  background-color: rgba(255, 138, 138, 0.24);
+}
+:root[data-ncas-scheme='dark'] .ncas-table-wrap .fui-TableRow.ncas-row--none,
+:root[data-ncas-scheme='dark'] .ncas-table-wrap .fui-TableRow.ncas-row--leave {
+  background-color: rgba(255, 255, 255, 0.055);
+}
 
-  .ncas-table-wrap .fui-TableRow.ncas-row--present:hover {
-    background-color: rgba(108, 203, 146, 0.39);
-  }
-  .ncas-table-wrap .fui-TableRow.ncas-row--late:hover {
-    background-color: rgba(255, 199, 89, 0.35);
-  }
-  .ncas-table-wrap .fui-TableRow.ncas-row--absent:hover {
-    background-color: rgba(255, 138, 138, 0.33);
-  }
-  .ncas-table-wrap .fui-TableRow.ncas-row--none:hover,
-  .ncas-table-wrap .fui-TableRow.ncas-row--leave:hover {
-    background-color: rgba(255, 255, 255, 0.11);
-  }
+:root[data-ncas-scheme='dark'] .ncas-table-wrap .fui-TableRow.ncas-row--present:hover {
+  background-color: rgba(108, 203, 146, 0.39);
+}
+:root[data-ncas-scheme='dark'] .ncas-table-wrap .fui-TableRow.ncas-row--late:hover {
+  background-color: rgba(255, 199, 89, 0.35);
+}
+:root[data-ncas-scheme='dark'] .ncas-table-wrap .fui-TableRow.ncas-row--absent:hover {
+  background-color: rgba(255, 138, 138, 0.33);
+}
+:root[data-ncas-scheme='dark'] .ncas-table-wrap .fui-TableRow.ncas-row--none:hover,
+:root[data-ncas-scheme='dark'] .ncas-table-wrap .fui-TableRow.ncas-row--leave:hover {
+  background-color: rgba(255, 255, 255, 0.11);
 }
 
 /* the validation list inside an error message bar */
@@ -1210,17 +1273,22 @@ p.fui-Text {
   color: #1b2733;
 }
 
+/* The card's own print, at the size a card is printed at. These two are the
+   smallest text on it and both were measured short of the floor on the card's
+   light stock: the city at 4.1:1 and the STUDENT label at 3.3:1. Both are
+   darkened to the nearest step that clears 4.5:1 — #5a6572 and #b44a17, 5.1:1
+   and 4.7:1 — rather than enlarged, because a card's type is what it is. */
 .ncas-scard__city {
   font-size: 6.5px;
   line-height: 1.3;
-  color: #6b7684;
+  color: #5a6572;
 }
 
 .ncas-scard__kind {
   flex: 0 0 auto;
   padding-bottom: 2px;
-  border-bottom: 1px solid #d9622a;
-  color: #d9622a;
+  border-bottom: 1px solid #b44a17;
+  color: #b44a17;
   font-size: 7px;
   font-weight: 800;
   letter-spacing: 0.16em;
@@ -1249,11 +1317,22 @@ p.fui-Text {
   color: #38495c;
 }
 
+/* The details sit in a knockout panel, and that is not decoration. The card's
+   printed band runs from a dark orange to a yellow, and white details over the
+   yellow end of it measure 2.7:1 — the parent account number at 9.5px, the
+   student number at 3.5:1, the name at 3.9:1. Those are the three things on the
+   card a student has to read, so they are given a ground dark enough to carry
+   white: 74% of near-black over the band's lightest colour lands at 10.3:1 and
+   over its darkest at 13.9:1. The band keeps its colour either side of the
+   panel, which is how a card is actually printed. */
 .ncas-scard__identity {
   position: relative;
   z-index: 1;
   display: grid;
   gap: 1px;
+  padding: 7px 8px 8px;
+  border-radius: 6px;
+  background: rgba(24, 14, 4, 0.74);
 }
 
 .ncas-scard__id {

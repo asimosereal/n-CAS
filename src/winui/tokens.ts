@@ -1,7 +1,7 @@
 // The WinUI 3 color vocabulary, transcribed from the shipping theme resource
 // dictionaries. In WinUI the dictionary keyed "Default" is the dark theme and
 // "Light" is the light one; here the unqualified block is light and the dark
-// values live under `prefers-color-scheme: dark`.
+// values live under `[data-ncas-scheme='dark']` on the document element.
 //
 // XAML writes colors as #AARRGGBB while CSS writes #RRGGBBAA, so every value
 // below is the XAML literal with its leading alpha byte moved to the end. Six
@@ -55,10 +55,14 @@
 // the layer, so a rule here never has to name where it does not apply.
 //
 // The `--winui-*` custom properties below are declared on `:root`, every one of
-// them. They switch on `prefers-color-scheme`, never on the provider's `theme`
-// prop, and no value here reads a Fluent theme variable, so nothing forces a
-// narrower scope than the document root — which inherits into mount nodes under
-// either setting of that prop, portalled surfaces included.
+// them, with the dark values re-declared on `:root[data-ncas-scheme='dark']`.
+// The attribute is the one place the scheme is decided — written before the
+// first paint by the boot script in `src/lib/scheme.ts`, and changed from the
+// navigation rail thereafter — so the dictionaries follow whatever the window is
+// set to rather than what the operating system happens to be. No value here
+// reads a Fluent theme variable, so nothing forces a narrower scope than the
+// document root, which inherits into mount nodes under either setting of the
+// provider's `theme` prop, portalled surfaces included.
 
 import { CHEVRON_TURN_EASING, CHEVRON_TURN_MS, COLLAPSE_ANIMATION_MS, CONTROL_FASTER_ANIMATION_MS, CONTROL_FAST_ANIMATION_MS, CONTROL_FAST_OUT_SLOW_IN_EASING, CONTROL_NORMAL_ANIMATION_MS, EXPAND_ANIMATION_MS, PAGE_ENTER_EASING, PAGE_ENTER_MS, PAGE_ENTER_OFFSET_PX, PAGE_LEAVE_EASING, PAGE_LEAVE_MS, REPOSITION_ANIMATION_MS, REPOSITION_EASING } from './motion';
 
@@ -75,15 +79,13 @@ export const winuiTokenCss = `
 }
 
 /* https://github.com/microsoft/microsoft-ui-xaml/blob/188f602b27cdb47572b28c380e9c087b02e1ccee/controls/dev/CommonStyles/Common_themeresources_any.xaml#L15-L21 */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --winui-control-fill-default: rgba(255, 255, 255, 0.058824);
-    --winui-control-fill-secondary: rgba(255, 255, 255, 0.082353);
-    --winui-control-fill-tertiary: rgba(255, 255, 255, 0.031373);
-    --winui-control-fill-disabled: rgba(255, 255, 255, 0.043137);
-    --winui-control-fill-transparent: rgba(255, 255, 255, 0);
-    --winui-control-fill-input-active: rgba(30, 30, 30, 0.701961);
-  }
+:root[data-ncas-scheme='dark'] {
+  --winui-control-fill-default: rgba(255, 255, 255, 0.058824);
+  --winui-control-fill-secondary: rgba(255, 255, 255, 0.082353);
+  --winui-control-fill-tertiary: rgba(255, 255, 255, 0.031373);
+  --winui-control-fill-disabled: rgba(255, 255, 255, 0.043137);
+  --winui-control-fill-transparent: rgba(255, 255, 255, 0);
+  --winui-control-fill-input-active: rgba(30, 30, 30, 0.701961);
 }
 
 /* Control strokes — the 1px outline around a control, plus the strong variant
@@ -100,16 +102,14 @@ export const winuiTokenCss = `
 }
 
 /* https://github.com/microsoft/microsoft-ui-xaml/blob/188f602b27cdb47572b28c380e9c087b02e1ccee/controls/dev/CommonStyles/Common_themeresources_any.xaml#L39-L49 */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --winui-control-stroke-default: rgba(255, 255, 255, 0.070588);
-    --winui-control-stroke-secondary: rgba(255, 255, 255, 0.094118);
-    --winui-control-stroke-on-accent-default: rgba(255, 255, 255, 0.078431);
-    --winui-control-stroke-on-accent-secondary: rgba(0, 0, 0, 0.137255);
-    --winui-control-stroke-on-accent-tertiary: rgba(0, 0, 0, 0.215686);
-    --winui-control-strong-stroke-default: rgba(255, 255, 255, 0.545098);
-    --winui-control-strong-stroke-disabled: rgba(255, 255, 255, 0.156863);
-  }
+:root[data-ncas-scheme='dark'] {
+  --winui-control-stroke-default: rgba(255, 255, 255, 0.070588);
+  --winui-control-stroke-secondary: rgba(255, 255, 255, 0.094118);
+  --winui-control-stroke-on-accent-default: rgba(255, 255, 255, 0.078431);
+  --winui-control-stroke-on-accent-secondary: rgba(0, 0, 0, 0.137255);
+  --winui-control-stroke-on-accent-tertiary: rgba(0, 0, 0, 0.215686);
+  --winui-control-strong-stroke-default: rgba(255, 255, 255, 0.545098);
+  --winui-control-strong-stroke-disabled: rgba(255, 255, 255, 0.156863);
 }
 
 /* The control strong fill -- the scroll bar thumb -- and the control solid
@@ -125,11 +125,9 @@ export const winuiTokenCss = `
 
 /* https://github.com/microsoft/microsoft-ui-xaml/blob/188f602b27cdb47572b28c380e9c087b02e1ccee/controls/dev/CommonStyles/Common_themeresources_any.xaml#L22
    https://github.com/microsoft/microsoft-ui-xaml/blob/188f602b27cdb47572b28c380e9c087b02e1ccee/controls/dev/CommonStyles/Common_themeresources_any.xaml#L24 */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --winui-control-strong-fill-default: rgba(255, 255, 255, 0.545098);
-    --winui-control-solid-fill-default: #454545;
-  }
+:root[data-ncas-scheme='dark'] {
+  --winui-control-strong-fill-default: rgba(255, 255, 255, 0.545098);
+  --winui-control-solid-fill-default: #454545;
 }
 
 /* https://github.com/microsoft/microsoft-ui-xaml/blob/188f602b27cdb47572b28c380e9c087b02e1ccee/controls/dev/CommonStyles/Common_themeresources_any.xaml#L229-L231 */
@@ -140,12 +138,10 @@ export const winuiTokenCss = `
 }
 
 /* https://github.com/microsoft/microsoft-ui-xaml/blob/188f602b27cdb47572b28c380e9c087b02e1ccee/controls/dev/CommonStyles/Common_themeresources_any.xaml#L25-L27 */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --winui-subtle-fill-transparent: rgba(255, 255, 255, 0);
-    --winui-subtle-fill-secondary: rgba(255, 255, 255, 0.058824);
-    --winui-subtle-fill-tertiary: rgba(255, 255, 255, 0.039216);
-  }
+:root[data-ncas-scheme='dark'] {
+  --winui-subtle-fill-transparent: rgba(255, 255, 255, 0);
+  --winui-subtle-fill-secondary: rgba(255, 255, 255, 0.058824);
+  --winui-subtle-fill-tertiary: rgba(255, 255, 255, 0.039216);
 }
 
 /* https://github.com/microsoft/microsoft-ui-xaml/blob/188f602b27cdb47572b28c380e9c087b02e1ccee/controls/dev/CommonStyles/Common_themeresources_any.xaml#L250-L265 */
@@ -158,14 +154,12 @@ export const winuiTokenCss = `
 }
 
 /* https://github.com/microsoft/microsoft-ui-xaml/blob/188f602b27cdb47572b28c380e9c087b02e1ccee/controls/dev/CommonStyles/Common_themeresources_any.xaml#L46-L61 */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --winui-card-background-fill-default: rgba(255, 255, 255, 0.05098);
-    --winui-card-background-fill-secondary: rgba(255, 255, 255, 0.031373);
-    --winui-card-stroke-default: rgba(0, 0, 0, 0.098039);
-    --winui-layer-fill-default: rgba(58, 58, 58, 0.298039);
-    --winui-layer-fill-alt: rgba(255, 255, 255, 0.05098);
-  }
+:root[data-ncas-scheme='dark'] {
+  --winui-card-background-fill-default: rgba(255, 255, 255, 0.05098);
+  --winui-card-background-fill-secondary: rgba(255, 255, 255, 0.031373);
+  --winui-card-stroke-default: rgba(0, 0, 0, 0.098039);
+  --winui-layer-fill-default: rgba(58, 58, 58, 0.298039);
+  --winui-layer-fill-alt: rgba(255, 255, 255, 0.05098);
 }
 
 /* The light-dismiss layer behind a modal surface. One value serves both
@@ -187,11 +181,9 @@ export const winuiTokenCss = `
 }
 
 /* https://github.com/microsoft/microsoft-ui-xaml/blob/188f602b27cdb47572b28c380e9c087b02e1ccee/controls/dev/Materials/Acrylic/AcrylicBrush_themeresources.xaml#L44 */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --winui-acrylic-in-app-fill-default: #2c2c2c;
-    --winui-acrylic-in-app-fill-default-rgb: 44, 44, 44;
-  }
+:root[data-ncas-scheme='dark'] {
+  --winui-acrylic-in-app-fill-default: #2c2c2c;
+  --winui-acrylic-in-app-fill-default-rgb: 44, 44, 44;
 }
 
 /* The tooltip drop shadow, the one overlay whose depth WinUI states in code
@@ -209,10 +201,8 @@ export const winuiTokenCss = `
   --winui-tooltip-shadow-color: rgba(0, 0, 0, 0.137255);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --winui-tooltip-shadow-color: rgba(0, 0, 0, 0.258824);
-  }
+:root[data-ncas-scheme='dark'] {
+  --winui-tooltip-shadow-color: rgba(0, 0, 0, 0.258824);
 }
 
 /* https://github.com/microsoft/microsoft-ui-xaml/blob/188f602b27cdb47572b28c380e9c087b02e1ccee/controls/dev/CommonStyles/Common_themeresources_any.xaml#L272-L279 */
@@ -225,14 +215,12 @@ export const winuiTokenCss = `
 }
 
 /* https://github.com/microsoft/microsoft-ui-xaml/blob/188f602b27cdb47572b28c380e9c087b02e1ccee/controls/dev/CommonStyles/Common_themeresources_any.xaml#L68-L75 */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --winui-solid-background-fill-base: #202020;
-    --winui-solid-background-fill-secondary: #1c1c1c;
-    --winui-solid-background-fill-tertiary: #282828;
-    --winui-solid-background-fill-quarternary: #2c2c2c;
-    --winui-solid-background-fill-base-alt: #0a0a0a;
-  }
+:root[data-ncas-scheme='dark'] {
+  --winui-solid-background-fill-base: #202020;
+  --winui-solid-background-fill-secondary: #1c1c1c;
+  --winui-solid-background-fill-tertiary: #282828;
+  --winui-solid-background-fill-quarternary: #2c2c2c;
+  --winui-solid-background-fill-base-alt: #0a0a0a;
 }
 
 /* Surface strokes and dividers — the outline of a flyout or dialog, and the
@@ -245,12 +233,10 @@ export const winuiTokenCss = `
 }
 
 /* https://github.com/microsoft/microsoft-ui-xaml/blob/188f602b27cdb47572b28c380e9c087b02e1ccee/controls/dev/CommonStyles/Common_themeresources_any.xaml#L50-L53 */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --winui-surface-stroke-default: rgba(117, 117, 117, 0.4);
-    --winui-surface-stroke-flyout: rgba(0, 0, 0, 0.2);
-    --winui-divider-stroke-default: rgba(255, 255, 255, 0.082353);
-  }
+:root[data-ncas-scheme='dark'] {
+  --winui-surface-stroke-default: rgba(117, 117, 117, 0.4);
+  --winui-surface-stroke-flyout: rgba(0, 0, 0, 0.2);
+  --winui-divider-stroke-default: rgba(255, 255, 255, 0.082353);
 }
 
 /* Text fills. Inverse is the one that flips: it is the fill for text sitting on
@@ -266,14 +252,12 @@ export const winuiTokenCss = `
 }
 
 /* https://github.com/microsoft/microsoft-ui-xaml/blob/188f602b27cdb47572b28c380e9c087b02e1ccee/controls/dev/CommonStyles/Common_themeresources_any.xaml#L5-L9 */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --winui-text-fill-primary: #ffffff;
-    --winui-text-fill-secondary: rgba(255, 255, 255, 0.772549);
-    --winui-text-fill-tertiary: rgba(255, 255, 255, 0.529412);
-    --winui-text-fill-disabled: rgba(255, 255, 255, 0.364706);
-    --winui-text-fill-inverse: rgba(0, 0, 0, 0.894118);
-  }
+:root[data-ncas-scheme='dark'] {
+  --winui-text-fill-primary: #ffffff;
+  --winui-text-fill-secondary: rgba(255, 255, 255, 0.772549);
+  --winui-text-fill-tertiary: rgba(255, 255, 255, 0.529412);
+  --winui-text-fill-disabled: rgba(255, 255, 255, 0.364706);
+  --winui-text-fill-inverse: rgba(0, 0, 0, 0.894118);
 }
 
 /* The description line's own step. SystemControlDescriptionTextForegroundBrush
@@ -289,10 +273,8 @@ export const winuiTokenCss = `
 }
 
 /* https://github.com/microsoft/microsoft-ui-xaml/blob/188f602b27cdb47572b28c380e9c087b02e1ccee/dxaml/xcp/dxaml/themes/generic.xaml#L209 */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --winui-text-base-medium: rgba(255, 255, 255, 0.6);
-  }
+:root[data-ncas-scheme='dark'] {
+  --winui-text-base-medium: rgba(255, 255, 255, 0.6);
 }
 
 /* The accent. The dictionaries state the relationship between the fills — one
@@ -353,20 +335,18 @@ export const winuiTokenCss = `
   --winui-accent-tint-stroke: #b3d1ec;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --winui-accent-base: var(--winui-system-accent-light-2);
-    --winui-accent-base-rgb: var(--winui-system-accent-light-2-rgb);
-    --winui-accent-text-fill-primary: var(--winui-system-accent-light-3);
-    --winui-accent-text-fill-secondary: var(--winui-system-accent-light-3);
-    --winui-accent-text-fill-tertiary: var(--winui-system-accent-light-2);
-    /* --winui-accent-base over --winui-solid-background-fill-quarternary at
-       14%, 21%, 28% and 52.5%. */
-    --winui-accent-tint-fill-default: #30414a;
-    --winui-accent-tint-fill-secondary: #334b58;
-    --winui-accent-tint-fill-tertiary: #355667;
-    --winui-accent-tint-stroke: #3d7b9b;
-  }
+:root[data-ncas-scheme='dark'] {
+  --winui-accent-base: var(--winui-system-accent-light-2);
+  --winui-accent-base-rgb: var(--winui-system-accent-light-2-rgb);
+  --winui-accent-text-fill-primary: var(--winui-system-accent-light-3);
+  --winui-accent-text-fill-secondary: var(--winui-system-accent-light-3);
+  --winui-accent-text-fill-tertiary: var(--winui-system-accent-light-2);
+  /* --winui-accent-base over --winui-solid-background-fill-quarternary at
+     14%, 21%, 28% and 52.5%. */
+  --winui-accent-tint-fill-default: #30414a;
+  --winui-accent-tint-fill-secondary: #334b58;
+  --winui-accent-tint-fill-tertiary: #355667;
+  --winui-accent-tint-stroke: #3d7b9b;
 }
 
 /* The selection highlight behind selected text. Both dictionaries key it to
@@ -386,10 +366,8 @@ export const winuiTokenCss = `
 }
 
 /* https://github.com/microsoft/microsoft-ui-xaml/blob/188f602b27cdb47572b28c380e9c087b02e1ccee/controls/dev/CommonStyles/Common_themeresources_any.xaml#L38 */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --winui-accent-fill-disabled: rgba(255, 255, 255, 0.156863);
-  }
+:root[data-ncas-scheme='dark'] {
+  --winui-accent-fill-disabled: rgba(255, 255, 255, 0.156863);
 }
 
 /* Text on and against accent. The light dictionary's disabled step is opaque
@@ -410,14 +388,12 @@ export const winuiTokenCss = `
 }
 
 /* https://github.com/microsoft/microsoft-ui-xaml/blob/188f602b27cdb47572b28c380e9c087b02e1ccee/controls/dev/CommonStyles/Common_themeresources_any.xaml#L10-L14 */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --winui-accent-text-fill-disabled: rgba(255, 255, 255, 0.364706);
-    --winui-text-on-accent-fill-primary: #000000;
-    --winui-text-on-accent-fill-secondary: rgba(0, 0, 0, 0.501961);
-    --winui-text-on-accent-fill-disabled: rgba(255, 255, 255, 0.529412);
-    --winui-text-on-accent-fill-selected-text: #ffffff;
-  }
+:root[data-ncas-scheme='dark'] {
+  --winui-accent-text-fill-disabled: rgba(255, 255, 255, 0.364706);
+  --winui-text-on-accent-fill-primary: #000000;
+  --winui-text-on-accent-fill-secondary: rgba(0, 0, 0, 0.501961);
+  --winui-text-on-accent-fill-disabled: rgba(255, 255, 255, 0.529412);
+  --winui-text-on-accent-fill-selected-text: #ffffff;
 }
 
 /* Corner radii. WinUI declares these per theme dictionary but ships the same
@@ -468,13 +444,11 @@ export const winuiTokenCss = `
 }
 
 /* https://github.com/microsoft/microsoft-ui-xaml/blob/188f602b27cdb47572b28c380e9c087b02e1ccee/controls/dev/CommonStyles/Common_themeresources_any.xaml#L29-L33 */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --winui-control-alt-fill-secondary: rgba(0, 0, 0, 0.098039);
-    --winui-control-alt-fill-tertiary: rgba(255, 255, 255, 0.043137);
-    --winui-control-alt-fill-quarternary: rgba(255, 255, 255, 0.070588);
-    --winui-control-alt-fill-disabled: rgba(255, 255, 255, 0);
-  }
+:root[data-ncas-scheme='dark'] {
+  --winui-control-alt-fill-secondary: rgba(0, 0, 0, 0.098039);
+  --winui-control-alt-fill-tertiary: rgba(255, 255, 255, 0.043137);
+  --winui-control-alt-fill-quarternary: rgba(255, 255, 255, 0.070588);
+  --winui-control-alt-fill-disabled: rgba(255, 255, 255, 0);
 }
 
 /* Focus strokes — an outer ring in the text color and an inner one in the
@@ -486,11 +460,9 @@ export const winuiTokenCss = `
 }
 
 /* https://github.com/microsoft/microsoft-ui-xaml/blob/188f602b27cdb47572b28c380e9c087b02e1ccee/controls/dev/CommonStyles/Common_themeresources_any.xaml#L54-L55 */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --winui-focus-stroke-outer: #ffffff;
-    --winui-focus-stroke-inner: rgba(0, 0, 0, 0.701961);
-  }
+:root[data-ncas-scheme='dark'] {
+  --winui-focus-stroke-outer: #ffffff;
+  --winui-focus-stroke-inner: rgba(0, 0, 0, 0.701961);
 }
 
 /* TextControlForegroundDisabled resolves to TemporaryTextFillColorDisabled, a
@@ -503,10 +475,8 @@ export const winuiTokenCss = `
 }
 
 /* https://github.com/microsoft/microsoft-ui-xaml/blob/188f602b27cdb47572b28c380e9c087b02e1ccee/controls/dev/CommonStyles/TextBox_themeresources.xaml#L22 */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --winui-temporary-text-fill-disabled: rgba(254, 254, 254, 0.364706);
-  }
+:root[data-ncas-scheme='dark'] {
+  --winui-temporary-text-fill-disabled: rgba(254, 254, 254, 0.364706);
 }
 
 /* Status fills. Attention is a step of the accent ramp, and not the step the
@@ -526,17 +496,15 @@ export const winuiTokenCss = `
 
 /* https://github.com/microsoft/microsoft-ui-xaml/blob/188f602b27cdb47572b28c380e9c087b02e1ccee/controls/dev/CommonStyles/Common_themeresources_any.xaml#L76-L87
    https://github.com/microsoft/microsoft-ui-xaml/blob/188f602b27cdb47572b28c380e9c087b02e1ccee/controls/dev/CommonStyles/Common_themeresources_any.xaml#L165 */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --winui-system-fill-success: #6ccb5f;
-    --winui-system-fill-caution: #fce100;
-    --winui-system-fill-critical: #ff99a4;
-    --winui-system-fill-attention: var(--winui-system-accent-light-2);
-    --winui-system-fill-success-background: #393d1b;
-    --winui-system-fill-caution-background: #433519;
-    --winui-system-fill-critical-background: #442726;
-    --winui-system-fill-attention-background: rgba(255, 255, 255, 0.031373);
-  }
+:root[data-ncas-scheme='dark'] {
+  --winui-system-fill-success: #6ccb5f;
+  --winui-system-fill-caution: #fce100;
+  --winui-system-fill-critical: #ff99a4;
+  --winui-system-fill-attention: var(--winui-system-accent-light-2);
+  --winui-system-fill-success-background: #393d1b;
+  --winui-system-fill-caution-background: #433519;
+  --winui-system-fill-critical-background: #442726;
+  --winui-system-fill-attention-background: rgba(255, 255, 255, 0.031373);
 }
 
 /* Composed strokes. WinUI outlines a control with a LinearGradientBrush over an
@@ -564,13 +532,11 @@ export const winuiTokenCss = `
 
 /* Dark leaves the gradient unflipped, so the brighter edge sits at the top.
    https://github.com/microsoft/microsoft-ui-xaml/blob/188f602b27cdb47572b28c380e9c087b02e1ccee/controls/dev/CommonStyles/Common_themeresources_any.xaml#L186-L191 */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --winui-control-elevation-border-color:
-      var(--winui-control-stroke-secondary)
-      var(--winui-control-stroke-default)
-      var(--winui-control-stroke-default);
-  }
+:root[data-ncas-scheme='dark'] {
+  --winui-control-elevation-border-color:
+    var(--winui-control-stroke-secondary)
+    var(--winui-control-stroke-default)
+    var(--winui-control-stroke-default);
 }
 
 /* The accent outline is the same construction over the on-accent strokes, and

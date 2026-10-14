@@ -4,18 +4,30 @@ import React from 'react';
 
 import { AppProvider } from '@/lib/store/store';
 import { FluentProvider, winuiDarkTheme, winuiLightTheme } from '@/lib/fluent';
+import {
+  applyScheme,
+  currentScheme,
+  storedScheme,
+  subscribe,
+} from '@/lib/scheme';
+import type { Scheme } from '@/lib/scheme';
 
 /**
  * Providers
  * ------------------------------------------------------------------
- * The Fluent theme is chosen from `prefers-color-scheme` and from nothing else.
+ * Hands the window its Fluent theme.
  *
- * That is not a shortcut. The `--winui-*` token dictionaries in
- * `src/winui/tokens.ts` are written as a `prefers-color-scheme: dark` media
- * query on `:root`, so a JavaScript theme switch could flip Fluent's tokens
- * while leaving the WinUI dictionaries on the old scheme. Reading the same
- * query for the Fluent theme is the only way the two stay in step, and it is
- * what the layer's own comments specify.
+ * The theme object and the CSS have to agree, and they agree by reading one
+ * value rather than by each guessing. `src/lib/scheme.ts` owns that value: the
+ * `--winui-*` dictionaries in `src/winui/tokens.ts` are written against
+ * `:root[data-ncas-scheme='dark']`, so the attribute alone decides what every
+ * WinUI token is. The Fluent theme is chosen from the same value here, for the
+ * tokens the WinUI palette does not cover.
+ *
+ * Neither side reads `prefers-color-scheme` any more. That query was what made
+ * a manual switch impossible, because it describes the operating system and
+ * cannot be set from JavaScript — the scheme had to be inferred from it on both
+ * sides at once, and a teacher's choice had nowhere to live.
  *
  * ---------------------------------------------------------------------------
  * Why the root class is on a wrapper and not on FluentProvider
@@ -36,19 +48,44 @@ import { FluentProvider, winuiDarkTheme, winuiLightTheme } from '@/lib/fluent';
  * inline style, which is not passed down; only the class is.
  */
 export function Providers({ children }: { children: React.ReactNode }) {
-  const [dark, setDark] = React.useState(false);
+  // Starts on light because the server has no way to know otherwise. The real
+  // scheme is already on the document element — the boot script in
+  // src/app/layout.tsx put it there before the first paint — so this state
+  // catches up on the first effect rather than deciding anything. Keeping the
+  // initial render identical on both sides also avoids a hydration mismatch.
+  const [scheme, setScheme] = React.useState<Scheme>('light');
 
   React.useEffect(() => {
-    const query = window.matchMedia('(prefers-color-scheme: dark)');
-    const apply = () => setDark(query.matches);
+    const apply = () => {
+      const next = currentScheme();
+      // Re-asserted rather than assumed: if the operating system has changed
+      // while the tab was in the background, the attribute is the thing the CSS
+      // reads, so it has to be brought up to date as well as the state.
+      applyScheme(next);
+      setScheme(next);
+    };
+
     apply();
-    query.addEventListener('change', apply);
-    return () => query.removeEventListener('change', apply);
+
+    /* A change in the operating system's preference is followed only while the
+       teacher has not chosen a scheme of their own — after that, their choice
+       stands until they change it, which is what "remembered" has to mean. */
+    const query = window.matchMedia('(prefers-color-scheme: dark)');
+    const onSystemChange = () => {
+      if (!storedScheme()) apply();
+    };
+    query.addEventListener('change', onSystemChange);
+
+    const unsubscribe = subscribe(setScheme);
+    return () => {
+      query.removeEventListener('change', onSystemChange);
+      unsubscribe();
+    };
   }, []);
 
   return (
     <FluentProvider
-      theme={dark ? winuiDarkTheme : winuiLightTheme}
+      theme={scheme === 'dark' ? winuiDarkTheme : winuiLightTheme}
       style={{ height: '100%' }}
     >
       <div className="ncas-root">

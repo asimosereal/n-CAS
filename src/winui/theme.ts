@@ -6,9 +6,11 @@ import { toLegacyCssColor } from './legacy-css-color';
 // Shared and status colors have no one-to-one WinUI counterpart and are spent
 // per control in ./controls/*.css.ts instead.
 //
-// One table serves both themes only because the app picks its Fluent theme from
-// `prefers-color-scheme` and nothing else (../root.tsx), the same query the
-// `--winui-*` dictionaries in ./tokens.ts switch on.
+// One table serves both themes because every colour in it is a `var(--winui-*)`
+// reference, so the dictionaries in ./tokens.ts — not this object — decide what
+// the colours actually are. The provider is still handed the matching theme (see
+// ../providers.tsx) for the tokens the palette does not cover, but the two can
+// no longer disagree about a colour: there is only one source.
 const palette = {
   // WinUI's SolidBackgroundFill ramp is ordered by role, not by lightness, so it
   // maps onto Fluent's ramp by role rather than by step number.
