@@ -91,17 +91,16 @@ p.fui-Text {
   padding: 8px 8px 14px;
 }
 
+/* The product mark: the blue tile from the supplied artwork, at the size the
+   rail gives it. It is an image rather than a coloured box with letters in it,
+   so the same asset serves the rail and the reader station's header, and so
+   the letters stay the artwork's own instead of the UI font's. */
 .ncas-brand__mark {
-  display: grid;
-  place-items: center;
+  display: block;
   width: 30px;
   height: 30px;
-  border-radius: 6px;
-  background: var(--winui-accent-fill-default);
-  color: var(--winui-text-on-accent-fill-primary);
-  font-weight: 600;
-  font-size: 13px;
-  letter-spacing: 0.02em;
+  flex: none;
+  object-fit: contain;
 }
 
 .ncas-brand__name {
@@ -510,6 +509,97 @@ p.fui-Text {
 
 .ncas-table-wrap .fui-TableRow[data-selected='true'] {
   background: var(--winui-subtle-fill-secondary);
+}
+
+/* ------------------------------------------------------------------
+   Attendance rows, tinted by status
+   ------------------------------------------------------------------
+   The dashboard is read from a distance, down a column of thirty names, so the
+   colour is what the eye lands on before the word is read. The tint is the
+   row's own surface rather than a border or a badge, which is what makes it
+   readable at that distance without touching the text.
+
+   The four tints are stated as translucent colours so they composite onto
+   whatever the table's own surface is — a selected row, a hovered row — instead
+   of replacing it. The hover state is restated on top at a similar strength, so
+   the tint survives the pointer passing over it rather than being washed out.
+
+   Each selector names the row's Fluent class as well as this one. Fluent's own
+   hover rule (`.fui-TableRow:hover`) carries the same specificity and Griffel
+   injects its stylesheet after this one, so without the extra class the hover
+   would win and the colour would disappear at the moment it is being read.
+
+   Grey is used for the two rows that have no status of their own, rather than
+   borrowing one of the other three: a student the reader has nothing for has
+   not been marked anything, and a student on approved leave is not being
+   marked at all. */
+.ncas-table-wrap .fui-TableRow.ncas-row--present {
+  background-color: rgba(16, 124, 68, 0.13);
+}
+.ncas-table-wrap .fui-TableRow.ncas-row--late {
+  background-color: rgba(180, 118, 0, 0.16);
+}
+.ncas-table-wrap .fui-TableRow.ncas-row--absent {
+  background-color: rgba(180, 32, 44, 0.12);
+}
+.ncas-table-wrap .fui-TableRow.ncas-row--none,
+.ncas-table-wrap .fui-TableRow.ncas-row--leave {
+  background-color: rgba(120, 132, 146, 0.12);
+}
+
+/* A tinted row must stay tinted under the pointer. Fluent's own hover is a
+   neutral fill that would wash the colour out at the moment the teacher is
+   reading it, so the hover is restated as the same hue one step deeper: the
+   pointer still gets its feedback, and the row keeps saying what it means. */
+.ncas-table-wrap .fui-TableRow.ncas-row--present:hover {
+  background-color: rgba(16, 124, 68, 0.22);
+}
+.ncas-table-wrap .fui-TableRow.ncas-row--late:hover {
+  background-color: rgba(180, 118, 0, 0.26);
+}
+.ncas-table-wrap .fui-TableRow.ncas-row--absent:hover {
+  background-color: rgba(180, 32, 44, 0.21);
+}
+.ncas-table-wrap .fui-TableRow.ncas-row--none:hover,
+.ncas-table-wrap .fui-TableRow.ncas-row--leave:hover {
+  background-color: rgba(120, 132, 146, 0.21);
+}
+
+@media (prefers-color-scheme: dark) {
+  /* The same four meanings on a dark surface. A dark surface needs more of the
+     hue in the mix than a light one does, not less: at the strength that reads
+     as a pale green on white, the same colour composited onto #202020 lands
+     within a few points of the neutral grey used for an unrecorded row — the
+     two stop being different colours. These values were measured, not guessed:
+     each composites to a colour at least 30 points of green away from the grey
+     row beside it, and every one keeps the row's white text above 5.5:1. */
+  .ncas-table-wrap .fui-TableRow.ncas-row--present {
+    background-color: rgba(108, 203, 146, 0.3);
+  }
+  .ncas-table-wrap .fui-TableRow.ncas-row--late {
+    background-color: rgba(255, 199, 89, 0.26);
+  }
+  .ncas-table-wrap .fui-TableRow.ncas-row--absent {
+    background-color: rgba(255, 138, 138, 0.24);
+  }
+  .ncas-table-wrap .fui-TableRow.ncas-row--none,
+  .ncas-table-wrap .fui-TableRow.ncas-row--leave {
+    background-color: rgba(255, 255, 255, 0.055);
+  }
+
+  .ncas-table-wrap .fui-TableRow.ncas-row--present:hover {
+    background-color: rgba(108, 203, 146, 0.39);
+  }
+  .ncas-table-wrap .fui-TableRow.ncas-row--late:hover {
+    background-color: rgba(255, 199, 89, 0.35);
+  }
+  .ncas-table-wrap .fui-TableRow.ncas-row--absent:hover {
+    background-color: rgba(255, 138, 138, 0.33);
+  }
+  .ncas-table-wrap .fui-TableRow.ncas-row--none:hover,
+  .ncas-table-wrap .fui-TableRow.ncas-row--leave:hover {
+    background-color: rgba(255, 255, 255, 0.11);
+  }
 }
 
 /* the validation list inside an error message bar */

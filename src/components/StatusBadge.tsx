@@ -136,3 +136,22 @@ export function rowAccent(record: AttendanceRecord | null): React.CSSProperties 
     ? { boxShadow: 'inset 3px 0 0 0 var(--winui-system-fill-attention)' }
     : {};
 }
+
+/**
+ * The class that tints a dashboard row by what its status is.
+ *
+ * A teacher reads this table from three metres away, down a column of thirty
+ * names, and the colour is what the eye lands on before the word is read — so
+ * the tint follows the status and nothing else. Two cases have no status of
+ * their own and are grey rather than being given a colour of somebody else's:
+ * a student with no record yet has not been marked anything, and a student on
+ * approved leave is not being marked at all.
+ *
+ * The colours themselves live in globals.css, so they can be restated for the
+ * dark scheme without this function knowing which scheme is running.
+ */
+export function rowTint(record: AttendanceRecord | null, approvedLeave = false): string {
+  if (approvedLeave) return 'ncas-row--leave';
+  if (!record) return 'ncas-row--none';
+  return `ncas-row--${record.status.toLowerCase()}`;
+}

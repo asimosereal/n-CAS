@@ -12,6 +12,7 @@ import {
   Scan20Regular,
   ShieldTask20Regular,
 } from '@fluentui/react-icons';
+import { SESSION } from '@/lib/data/seed';
 
 /**
  * NavRail
@@ -45,9 +46,7 @@ export function NavRail() {
   return (
     <nav className="ncas-nav" aria-label="Main">
       <div className="ncas-brand">
-        <span className="ncas-brand__mark" aria-hidden>
-          nC
-        </span>
+        <img className="ncas-brand__mark" src="/ncas-logo.png" alt="" width={30} height={30} />
         <span>
           <span className="ncas-brand__name">n-CAS</span>
           <br />
@@ -78,7 +77,7 @@ export function NavRail() {
 
       <div className="ncas-brand" style={{ paddingBottom: 0 }}>
         <Caption1 className="ncas-muted">
-          Room B420 · Reader T-01
+          Room {SESSION.room} · Reader T-01
           <br />
           Software v1.0
         </Caption1>

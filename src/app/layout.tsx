@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   title: 'n-CAS — Student Classroom Attendance System',
   description:
     'Desktop attendance system: RFID identification, automatic PRESENT/LATE/ABSENT marking, class-break tracking, teacher review and manual override.',
+  // The same mark the rail and the station header use, so the browser tab
+  // carries the product rather than Next's default.
+  icons: { icon: '/ncas-logo.png' },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

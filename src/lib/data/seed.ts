@@ -40,7 +40,7 @@ export const SESSION: ClassSession = {
   className: 'IGCSE Computer Science — 10A',
   subject: 'Computer Science',
   teacherName: 'Ms L. Fernandez',
-  room: 'B420',
+  room: 'B323',
   date: '2026-10-05',
   startTime: toMinutes('08:00'),
   endTime: toMinutes('09:00'),

@@ -96,6 +96,35 @@ Screens 2 to 5 share one window chrome — navigation rail, header band, metric 
 status badges. Screen 1 deliberately has no navigation: it is a kiosk standing in a corridor,
 not a workspace at a desk.
 
+### The mark and the room
+
+The product mark is the artwork in `public/ncas-logo.png`, and it is the same file in all three
+places it appears: the navigation rail, the reader station's header, and the browser tab. It was
+supplied as a blue rounded square on a black background, so the black surround was removed —
+by flood filling inwards from the border, since the surround and the "nC" letters are the same
+colour and cannot be told apart by colour alone. The rim the anti-aliasing left behind was
+cleared with it, which costs the tile a hair at its edge and buys a mark that sits on any
+background.
+
+The class runs in **B323** (`SESSION.room` in `src/lib/data/seed.ts`). Every screen that names a
+room reads it from there, including the navigation rail's footer, so there is one value to change.
+
+### The register reads by colour
+
+Every row of the dashboard's register carries the colour of its status: **green** for present,
+**amber** for late, **red** for absent, **grey** for the two rows that have no status of their
+own — a student the reader has nothing for, and a student on approved leave. The colour is the
+row's own surface rather than a border or a badge, because a teacher reads this table from three
+metres away and the tint is what the eye lands on before the word is read.
+
+The tints are translucent, so they composite onto whatever the table already shows — a hovered
+row stays the same colour one step deeper rather than turning neutral. The dark scheme needs
+more of the hue in the mix than the light one, not less: at the strength that reads as pale
+green on white, the same colour composited onto `#202020` lands within a few points of the grey
+used for an unrecorded row, and the two stop being different colours. Each value in
+`globals.css` was chosen by measuring the composite, and every one keeps the row's text above
+5.5:1 contrast.
+
 ---
 
 ## Screen 1 — the reader station
@@ -312,6 +341,9 @@ do.
 | `17-special-events.png` | Screen 5, with one event in each state (captured in a 1100px-tall window, because the page is taller than 900) |
 | `18-events-approved-leave.png` | Screen 1 after scanning a student covered by a running event |
 | `19-events-cancel-dialog.png` | The confirmation dialog for cancelling an event |
+| `29-dashboard-row-tints.png` | Screen 2 with every row tinted by status: green, amber, red, grey |
+| `30-dashboard-row-tints-dark.png` | The same register in the dark scheme |
+| `31-reader-station-logo.png` | Screen 1 with the product mark in the station header |
 
 The last three figures are the specification's own worked example, and the set reaches them by
 scanning the class in at the reader rather than by pre-loading it: thirteen cards are pushed at

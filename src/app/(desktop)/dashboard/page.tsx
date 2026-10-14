@@ -41,6 +41,7 @@ import {
   ReviewBadge,
   needsAttention,
   rowAccent,
+  rowTint,
   statusLabel,
 } from '@/components/StatusBadge';
 import type { AttendanceStatus } from '@/lib/types';
@@ -248,7 +249,11 @@ export default function AttendanceDashboardPage() {
 
               <TableBody>
                 {roster.map(({ student, record, breakMinutes, breakStatus }) => (
-                  <TableRow key={student.studentId} style={rowAccent(record)}>
+                  <TableRow
+                    key={student.studentId}
+                    className={rowTint(record, student.approvedLeave)}
+                    style={rowAccent(record)}
+                  >
                     <TableCell>
                       <TableCellLayout>
                         <Text weight={needsAttention(record) ? 'semibold' : 'regular'}>

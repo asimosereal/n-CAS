@@ -25,7 +25,7 @@ import { Board20Regular, Scan24Regular } from '@fluentui/react-icons';
 /**
  * SCREEN 1 — STUDENT RFID READER
  * ==================================================================
- * The reader station. This is the hardware that stands at the door of B420, and
+ * The reader station. This is the hardware that stands at the door of B323, and
  * the screen is built around it: a physical scanner the student pushes a card
  * against, a card that can actually be dragged to it, and a large panel that
  * stays empty until something real has happened.
@@ -524,9 +524,7 @@ export default function ReaderStationPage() {
       <header className="ncas-header">
         <div className="ncas-header__titles">
           <div className="ncas-row" style={{ gap: 12 }}>
-            <span className="ncas-brand__mark" aria-hidden>
-              nC
-            </span>
+            <img className="ncas-brand__mark" src="/ncas-logo.png" alt="" width={30} height={30} />
             <div>
               <Title2 as="h1" style={{ margin: 0 }}>
                 n-CAS
